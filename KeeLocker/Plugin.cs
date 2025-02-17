@@ -68,7 +68,7 @@ namespace KeeLocker
 			if (t == KeePass.Plugins.PluginMenuType.Main)
 			{
 				System.Windows.Forms.ToolStripMenuItem UnlockThisDB = new System.Windows.Forms.ToolStripMenuItem();
-				UnlockThisDB.Text = "Keelocker unlock volumes in this DB";
+				UnlockThisDB.Text = "KeeLocker unlock volumes in this DB";
 				UnlockThisDB.Click += this.UnlockThisDB;
 				UnlockThisDB.Paint += delegate (object sender, System.Windows.Forms.PaintEventArgs e)
 				{
@@ -86,14 +86,14 @@ namespace KeeLocker
 					KeePassLib.PwEntry[] Entries = m_host.MainWindow.GetSelectedEntries();
 					int SelectedCount = Entries == null ? 0 : Entries.Length;
 					UnlockEntry.Enabled = SelectedCount > 0;
-					UnlockEntry.Text = SelectedCount > 1 ? "Keelocker unlock volumes" : "Keelocker unlock volume";
+					UnlockEntry.Text = SelectedCount > 1 ? "KeeLocker unlock volumes" : "KeeLocker unlock volume";
 				};
 				return UnlockEntry;
 			}
 			else if (t == KeePass.Plugins.PluginMenuType.Group)
 			{
 				System.Windows.Forms.ToolStripMenuItem UnlockGroup = new System.Windows.Forms.ToolStripMenuItem();
-				UnlockGroup.Text = "Keelocker unlock volumes in this group";
+				UnlockGroup.Text = "KeeLocker unlock volumes in this group";
 				UnlockGroup.Click += this.UnlockGroup;
 				UnlockGroup.Paint += delegate (object sender, System.Windows.Forms.PaintEventArgs e)
 				{
