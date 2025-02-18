@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 using System.Text;
-using System.Windows.Forms;
 
 namespace KeeLocker
 {
@@ -102,9 +101,9 @@ namespace KeeLocker
 		{
 			Result R = Result.Ok;
 
-			IntPtr pAuthElement = (IntPtr)0;
-			IntPtr ppAuthElement = (IntPtr)0;
-			IntPtr pUnlockSettings = (IntPtr)0;
+			IntPtr pAuthElement = IntPtr.Zero;
+	        IntPtr ppAuthElement = IntPtr.Zero;
+			IntPtr pUnlockSettings = IntPtr.Zero;
 			do
 			{
 				if (DriveGUID.Length == 0)
@@ -148,7 +147,7 @@ namespace KeeLocker
 					}
 				}
 
-				IntPtr HVolume = (IntPtr)0;
+				IntPtr HVolume = IntPtr.Zero;
 				HResult = FveOpenVolume(DriveGUID, 0, ref HVolume);
 				if (HResult != 0)
 				{

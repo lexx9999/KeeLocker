@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.Windows.Forms;
 using KeePass.Plugins;
 
@@ -173,19 +175,24 @@ namespace KeeLocker.Forms
 			UpdateUi();
 		}
 
-		private void btn_Unlock_Click(object sender, EventArgs e)
-		{
-			KeePassLib.Collections.ProtectedStringDictionary Strings = m_entry.Strings;
-			KeePassLib.Security.ProtectedString Password = Strings.Get(KeeLockerExt.StringName_Password);
-			KeePassLib.Security.ProtectedString IsRecoveryKey = Strings.Get(KeeLockerExt.StringName_IsRecoveryKey);
+	private void btn_Unlock_Click(object sender, EventArgs e)
+	{
+	  KeePassLib.Collections.ProtectedStringDictionary Strings = m_entry.Strings;
+	  KeePassLib.Security.ProtectedString Password = Strings.Get(KeeLockerExt.StringName_Password);
+	  KeePassLib.Security.ProtectedString IsRecoveryKey = Strings.Get(KeeLockerExt.StringName_IsRecoveryKey);
+	  this.btn_Unlock.Enabled = false;
 
-			m_plugin.TryUnlockVolume(
-				m_DriveIdType == KeeLockerExt.EDriveIdType.MountPoint ? m_DriveMountPoint : "",
-				m_DriveIdType == KeeLockerExt.EDriveIdType.GUID ? m_DriveGUID : "", 
-				Password != null ? Password.ReadString() : "",
-				GetIsRecoveryKeyFromString(IsRecoveryKey)
-				);
-		}
+	  var item = new KeeLockerExt.BitLockerItem(m_DriveIdType,
+		new KeePassLib.Security.ProtectedString(true, m_DriveMountPoint),
+		new KeePassLib.Security.ProtectedString(true, m_DriveGUID),
+		Password,
+		GetIsRecoveryKeyFromString(IsRecoveryKey));
+
+	  m_plugin.UnlockBitLocker(new List<KeeLockerExt.BitLockerItem> { item }, KeeLockerExt.EUnlockReason.UserRequest, this, (bool success) =>
+	  {
+		this.btn_Unlock.Enabled = true;
+      });
+	}
 
 		private void btn_DriveGUID_Click(object sender, EventArgs e)
 		{
