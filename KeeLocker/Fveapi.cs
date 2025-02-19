@@ -1,78 +1,145 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Text;
 
 namespace KeeLocker
 {
-	public class FveApi
+  public class FveApi
+  {
+
+	[StructLayout(LayoutKind.Explicit, Pack = 1, Size = 584)]
+	internal struct FVE_AUTH_ELEMENT
 	{
+	  [FieldOffset(0)]
+	  public Int32 MagicValue;
 
-		[StructLayout(LayoutKind.Explicit, Pack = 1, Size = 584)]
-		internal struct FVE_AUTH_ELEMENT
+	  [FieldOffset(4)]
+	  public Int32 MustBeOne;
+
+	  [FieldOffset(8)]
+	  public byte Data_Start;
+	}
+
+	[StructLayout(LayoutKind.Explicit, Pack = 1)]
+	internal struct FVE_UNLOCK_SETTINGS
+	{
+	  [FieldOffset(0x00)]
+	  public Int32 rsp_30;
+
+	  [FieldOffset(0x04)]
+	  public Int32 rsp_34;
+
+	  [FieldOffset(0x08)]
+	  public Int32 rsp_38;
+
+	  [FieldOffset(0x0C)]
+	  public Int32 rsp_3C;
+
+	  [FieldOffset(0x10)]
+	  public IntPtr rsp_40; // FVE_AUTH_ELEMENT**
+
+	  [FieldOffset(0x18)]
+	  public Int64 rsp_48;
+	};
+
+	internal enum HRESULT
+	{
+	  S_OK = unchecked((int)0x00000000),
+	  FVE_E_FAILED_AUTHENTICATION = unchecked((int)0x80310027),
+      FVE_E_NOT_ACTIVATED = unchecked((int)0x80310008),
+	}
+	internal enum FVE_SECRET_TYPE
+	{
+	  PassPhrase = unchecked((int)0x800000),
+	  RecoveryPassword = unchecked((int)0x80000),
+	}
+
+	[DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode, EntryPoint = "GetVolumeNameForVolumeMountPointW")]
+	internal static extern bool GetVolumeNameForVolumeMountPoint(string lpszVolumeMountPoint, [Out] StringBuilder lpszVolumeName, uint cchBufferLength);
+
+	[DllImport("FVEAPI.dll", SetLastError = true, CharSet = CharSet.Unicode, EntryPoint = "FveAuthElementFromPassPhrase")]
+	internal static extern HRESULT FveAuthElementFromPassPhrase(string PassPhrase, ref FVE_AUTH_ELEMENT AuthElement);
+	[DllImport("FVEAPI.dll", SetLastError = true, CharSet = CharSet.Unicode, EntryPoint = "FveAuthElementFromRecoveryPassword")]
+	internal static extern HRESULT FveAuthElementFromRecoveryPassword(string PassPhrase, ref FVE_AUTH_ELEMENT AuthElement);
+	[DllImport("FVEAPI.dll", SetLastError = true, CharSet = CharSet.Unicode, EntryPoint = "FveOpenVolume")]
+	internal static extern HRESULT FveOpenVolume(string VolumeId, Int32 FlagsMaybe, ref IntPtr HVolume);
+	[DllImport("FVEAPI.dll", SetLastError = true, CharSet = CharSet.Unicode, EntryPoint = "FveUnlockVolumeWithAccessMode")]
+	internal static extern HRESULT FveUnlockVolumeWithAccessMode(IntPtr HVolume, ref FVE_UNLOCK_SETTINGS UnlockSettings, Int32 FlagsMaybe);
+	[DllImport("FVEAPI.dll", SetLastError = true, CharSet = CharSet.Unicode, EntryPoint = "FveCloseVolume")]
+	internal static extern HRESULT FveCloseVolume(IntPtr HVolume, ref FVE_UNLOCK_SETTINGS UnlockSettings, Int32 FlagsMaybe, Int32 PassPhrase);
+
+	[DllImport("kernel32.dll", SetLastError = true)]
+	internal static extern uint QueryDosDevice(string lpDeviceName, [Out] StringBuilder lpTargetPath, uint ucchMax);
+
+	[DllImport("kernel32.dll", EntryPoint = "FindFirstVolume", SetLastError = true, CallingConvention = CallingConvention.StdCall)]
+	internal static extern IntPtr FindFirstVolume([Out] StringBuilder lpszVolumeName, uint cchBufferLength);
+	[DllImport("kernel32.dll", EntryPoint = "FindNextVolume", SetLastError = true, CallingConvention = CallingConvention.StdCall)]
+	internal static extern bool FindNextVolume(IntPtr hFindVolume, [Out] StringBuilder lpszVolumeName, uint cchBufferLength);
+	[DllImport("kernel32.dll", EntryPoint = "FindVolumeClose", SetLastError = true, CallingConvention = CallingConvention.StdCall)]
+	internal static extern bool FindVolumeClose(IntPtr hFindVolume);
+
+	[DllImport("kernel32.dll", EntryPoint = "FindFirstVolumeMountPoint", SetLastError = true, CallingConvention = CallingConvention.StdCall)]
+	internal static extern IntPtr FindFirstVolumeMountPoint(string lpszVolumeName, [Out] StringBuilder lpszVolumeMountPoint, uint cchBufferLength);
+	[DllImport("kernel32.dll", EntryPoint = "FindNextVolumeMountPoint", SetLastError = true, CallingConvention = CallingConvention.StdCall)]
+	internal static extern bool FindNextVolumeMountPoint(IntPtr hFindVolumeMountPoint, [Out] StringBuilder lpszVolumeMountPoint, uint cchBufferLength);
+	[DllImport("kernel32.dll", EntryPoint = "FindVolumeMountPointClose", SetLastError = true, CallingConvention = CallingConvention.StdCall)]
+	internal static extern bool FindVolumeMountPointClose(IntPtr hFindVolumeMountPoint);
+
+	[DllImport("kernel32.dll", EntryPoint = "GetVolumePathNamesForVolumeName", SetLastError = true)]
+	[return: MarshalAs(UnmanagedType.Bool)]
+	private static extern bool GetVolumePathNamesForVolumeName(string lpszVolumeName, [Out] char[] lpszVolumePathNames, uint cchBufferLength, ref UInt32 lpcchReturnLength);
+
+
+	internal static bool GetVolumePathNamesForVolumeName(string lpszVolumeName, out List<string> volumePaths)
+	{
+	  char[] buf = new char[20];
+	 //StringBuilder buf = new StringBuilder(10);
+	  UInt32 N = 0;
+	  if (!GetVolumePathNamesForVolumeName(lpszVolumeName,  buf, (uint)buf.Length, ref N))
+	  {
+
+		int ec = Marshal.GetLastWin32Error();
+		if (ec == 0xea && N > 0)
 		{
-			[FieldOffset(0)]
-			public Int32 MagicValue;
+		  //
+		  buf = new char[N];
+           //buf = new StringBuilder((int)N);
 
-			[FieldOffset(4)]
-			public Int32 MustBeOne;
-
-			[FieldOffset(8)]
-			public byte Data_Start;
+          N = 0;
+		  if (!GetVolumePathNamesForVolumeName(lpszVolumeName,  buf, (uint)buf.Length, ref N))
+		  {
+			volumePaths = null;
+			return false;
+		  }
 		}
+	  }
 
-		[StructLayout(LayoutKind.Explicit, Pack = 1)]
-		internal struct FVE_UNLOCK_SETTINGS
-		{
-			[FieldOffset(0x00)]
-			public Int32 rsp_30;
+	  volumePaths = new List<string>();
+	  int z = 0;
+	  while (z < N && buf[z] != 0)
+	  {
+		int q = Array.IndexOf(buf, '\0', z, (int)N - z);
+		if (q == -1) break;
+		volumePaths.Add(new string(buf, z, q));
+		z += q + 1;
+	  }
 
-			[FieldOffset(0x04)]
-			public Int32 rsp_34;
 
-			[FieldOffset(0x08)]
-			public Int32 rsp_38;
+	  return true;
 
-			[FieldOffset(0x0C)]
-			public Int32 rsp_3C;
 
-			[FieldOffset(0x10)]
-			public IntPtr rsp_40; // FVE_AUTH_ELEMENT**
+	}
 
-			[FieldOffset(0x18)]
-			public Int64 rsp_48;
-		};
 
-		internal enum HRESULT
-		{
-			S_OK = unchecked((int)0x00000000),
-			FVE_E_FAILED_AUTHENTICATION = unchecked((int)0x80310027),
-		}
-		internal enum FVE_SECRET_TYPE
-		{
-			PassPhrase = unchecked((int)0x800000),
-			RecoveryPassword = unchecked((int)0x80000),
-		}
 
-		[DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode, EntryPoint = "GetVolumeNameForVolumeMountPointW")]
-		internal static extern bool GetVolumeNameForVolumeMountPoint(string lpszVolumeMountPoint, [Out] StringBuilder lpszVolumeName, uint cchBufferLength);
-
-		[DllImport("FVEAPI.dll", SetLastError = true, CharSet = CharSet.Unicode, EntryPoint = "FveAuthElementFromPassPhrase")]
-		internal static extern HRESULT FveAuthElementFromPassPhrase(string PassPhrase, ref FVE_AUTH_ELEMENT AuthElement);
-		[DllImport("FVEAPI.dll", SetLastError = true, CharSet = CharSet.Unicode, EntryPoint = "FveAuthElementFromRecoveryPassword")]
-		internal static extern HRESULT FveAuthElementFromRecoveryPassword(string PassPhrase, ref FVE_AUTH_ELEMENT AuthElement);
-		[DllImport("FVEAPI.dll", SetLastError = true, CharSet = CharSet.Unicode, EntryPoint = "FveOpenVolume")]
-		internal static extern HRESULT FveOpenVolume(string VolumeId, Int32 FlagsMaybe, ref IntPtr HVolume);
-		[DllImport("FVEAPI.dll", SetLastError = true, CharSet = CharSet.Unicode, EntryPoint = "FveUnlockVolumeWithAccessMode")]
-		internal static extern HRESULT FveUnlockVolumeWithAccessMode(IntPtr HVolume, ref FVE_UNLOCK_SETTINGS UnlockSettings, Int32 FlagsMaybe);
-		[DllImport("FVEAPI.dll", SetLastError = true, CharSet = CharSet.Unicode, EntryPoint = "FveCloseVolume")]
-		internal static extern HRESULT FveCloseVolume(IntPtr HVolume, ref FVE_UNLOCK_SETTINGS UnlockSettings, Int32 FlagsMaybe, Int32 PassPhrase);
-
-		public enum Result
+    public enum Result
 		{
 			Ok,
 			Unexpected,
 			DriveNotFound,
 			WrongPassPhrase,
+			NoBitLockerVolume
 		}
 
 		private static IntPtr StructToPointer(object Struct)
@@ -87,7 +154,7 @@ namespace KeeLocker
 			const int MaxVolumeNameLength = 50;
 			StringBuilder DriveGUIDWriter = new StringBuilder(MaxVolumeNameLength);
 
-			bool Ok = GetVolumeNameForVolumeMountPoint(DriveMountPoint, DriveGUIDWriter, (uint)DriveGUIDWriter.MaxCapacity);
+			bool Ok = GetVolumeNameForVolumeMountPoint(DriveMountPoint, DriveGUIDWriter, (uint)DriveGUIDWriter.Capacity);
 			if (!Ok)
 			{
 				DriveGUID = "";
@@ -174,6 +241,11 @@ namespace KeeLocker
 					R = Result.WrongPassPhrase;
 					break;
 				}
+		if (HResult == HRESULT.FVE_E_NOT_ACTIVATED)
+		{
+		  R = Result.NoBitLockerVolume;
+		  break;
+		}
 
 				if (HResult != 0)
 				{

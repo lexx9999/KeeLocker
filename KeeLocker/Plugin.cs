@@ -1,5 +1,4 @@
-﻿using KeePass.UI;
-using KeePassLib;
+﻿using KeePassLib;
 using KeePassLib.Security;
 using System;
 using System.Collections.Generic;
@@ -51,6 +50,7 @@ namespace KeeLocker
 	  KeePass.UI.GlobalWindowManager.WindowAdded += OnWindowAdded;
 
 	  m_Subscription = FveApi.StateChangeNotification_Subscribe(OnDriveConnected);
+
       return true;
 	}
 
@@ -130,8 +130,9 @@ namespace KeeLocker
 
 	  return Controls[0] as Type;
 	}
+	const string KeeLockerTabName = "KeeLockerTab";
 
-	void OnEntryFormShown(object sender, EventArgs e)
+    void OnEntryFormShown(object sender, EventArgs e)
 	{
 	  KeePass.Forms.PwEntryForm Form = sender as KeePass.Forms.PwEntryForm;
 	  if (Form == null)
@@ -151,14 +152,33 @@ namespace KeeLocker
 	  KeeLocker.Forms.KeeLockerEntryTab KeeLockerEntryTab = new KeeLocker.Forms.KeeLockerEntryTab(m_host, this, Entry, strings);
 
 	  System.Windows.Forms.TabPage KeeLockerEntryTabContainer = new System.Windows.Forms.TabPage("KeeLocker");
+	  KeeLockerEntryTabContainer.Name = KeeLockerTabName;
+	  KeeLockerEntryTabContainer.Tag = KeeLockerEntryTab;
 	  KeeLockerEntryTabContainer.Controls.Add(KeeLockerEntryTab);
 	  KeeLockerEntryTab.Dock = System.Windows.Forms.DockStyle.Fill;
 	  tabMain.TabPages.Add(KeeLockerEntryTabContainer);
 
 	  btnOk.Click += KeeLockerEntryTab.OnSave;
+      tabMain.SelectedIndexChanged += TabMain_SelectedIndexChanged;
 	}
 
-	internal enum EUnlockReason
+	private void TabMain_SelectedIndexChanged(object sender, EventArgs e)
+	{
+	  System.Windows.Forms.TabControl tabMain = (System.Windows.Forms.TabControl)sender;
+	  int s = tabMain.SelectedIndex;
+	  for (int i = 0; i < tabMain.TabCount; i++)
+	  {
+		System.Windows.Forms.TabPage tab = tabMain.TabPages[i];
+		bool isKeeLockerTab = (tab != null && tab.Name == KeeLockerTabName && tab.Tag is KeeLocker.Forms.KeeLockerEntryTab);
+		if (isKeeLockerTab)
+		{
+		  ((KeeLocker.Forms.KeeLockerEntryTab)tab.Tag).SetTabSelected(s == i);
+		}
+	  }
+	}
+
+
+    internal enum EUnlockReason
 	{
 	  DatabaseOpening,
 	  DriveConnected,
@@ -232,7 +252,10 @@ namespace KeeLocker
 
 	private static void TryUnlockVolume_Thread(IEnumerable<BitLockerItem> bitLockerItems, EUnlockReason UnlockReason, System.Windows.Forms.Control target, UnlockResultDelegate unlockResult)
 	{
-	  bool success = true;
+      // filter attempts by results of FindFirstVolumeW ... and QueryDosDeviceW
+      // https://learn.microsoft.com/en-us/windows/win32/fileio/displaying-volume-paths
+
+      bool success = true;
 	  foreach (BitLockerItem item in bitLockerItems)
 	  {
 		try
@@ -271,8 +294,8 @@ namespace KeeLocker
 		KeePassLib.Collections.ProtectedStringDictionary Strings = Entry.Strings;
 		KeePassLib.Security.ProtectedString UnlockOnOpening = Strings.Get(StringName_UnlockOnOpening);
 		KeePassLib.Security.ProtectedString UnlockOnConnection = Strings.Get(StringName_UnlockOnConnection);
-		bool UnlockOnOpening_bool = Forms.KeeLockerEntryTab.GetUnlockOnOpeningFromString(UnlockOnOpening);
-		bool UnlockOnConnection_bool = Forms.KeeLockerEntryTab.GetUnlockOnOpeningFromString(UnlockOnConnection);
+		bool UnlockOnOpening_bool = Forms.KeeLockerEntryTab.GetBoolSetting(UnlockOnOpening,  Forms.KeeLockerEntryTab.DefaultUnlockOnOpening);
+		bool UnlockOnConnection_bool = Forms.KeeLockerEntryTab.GetBoolSetting(UnlockOnConnection,  Forms.KeeLockerEntryTab.DefaultUnlockOnConnection);
 
 		switch (UnlockReason)
 		{
@@ -294,7 +317,7 @@ namespace KeeLocker
 		KeePassLib.Security.ProtectedString DriveIdTypeStr = Strings.Get(StringName_DriveIdType);
 		KeePassLib.Security.ProtectedString IsRecoveryKey = Strings.Get(StringName_IsRecoveryKey);
 		KeePassLib.Security.ProtectedString Password = Strings.Get(StringName_Password);
-		bool IsRecoveryKey_bool = Forms.KeeLockerEntryTab.GetIsRecoveryKeyFromString(IsRecoveryKey);
+		bool IsRecoveryKey_bool = Forms.KeeLockerEntryTab.GetBoolSetting(IsRecoveryKey,  Forms.KeeLockerEntryTab.DefaultIsRecoveryKey);
 
 		if (Password == null)
 		  continue;
@@ -304,9 +327,6 @@ namespace KeeLocker
 	  return mapped;
 	}
 
-	private void addUnlockEntry(List<BitLockerItem> unlockset, KeePassLib.PwEntry Entry, EUnlockReason UnlockReason)
-	{
-	}
 
 	internal class BitLockerItem
 	{
