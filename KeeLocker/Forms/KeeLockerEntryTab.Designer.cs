@@ -197,7 +197,7 @@ namespace KeeLocker.Forms
       this.lbl_DriveGUID.Name = "lbl_DriveGUID";
       this.lbl_DriveGUID.Size = new System.Drawing.Size(566, 58);
       this.lbl_DriveGUID.TabIndex = 104;
-      this.lbl_DriveGUID.Text = "Use a GUID whenever possible, especially on removable devices.";
+      this.lbl_DriveGUID.Text = "Use a GUID whenever possible, especially for removable devices.";
       // 
       // grp_Unlock
       // 
