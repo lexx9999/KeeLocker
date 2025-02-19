@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Drawing;
 using System.Text;
 using System.Windows.Forms;
+using KeePass.Forms;
 using KeePass.Plugins;
 
 namespace KeeLocker.Forms
@@ -14,9 +15,10 @@ namespace KeeLocker.Forms
 	private KeeLockerExt m_plugin;
 	private KeePassLib.PwEntry m_entry;
 	private KeePassLib.Collections.ProtectedStringDictionary m_entrystrings;
+    private readonly PwEntryForm PwEntryForm;
 
-	// settings
-	private KeeLockerExt.EDriveIdType m_DriveIdType;
+    // settings
+    private KeeLockerExt.EDriveIdType m_DriveIdType;
 	private string m_DriveMountPoint;
 	private string m_DriveGUID;
 	private bool m_UnlockOnOpening;
@@ -67,14 +69,14 @@ namespace KeeLocker.Forms
 
 	private IList<VolumeInfo> VolumeInfos = new List<VolumeInfo>();
 
-	public KeeLockerEntryTab(IPluginHost host, KeeLockerExt plugin, KeePassLib.PwEntry entry, KeePassLib.Collections.ProtectedStringDictionary strings)
+	public KeeLockerEntryTab(IPluginHost host, KeeLockerExt plugin, KeePassLib.PwEntry entry, KeePassLib.Collections.ProtectedStringDictionary strings, KeePass.Forms.PwEntryForm form)
 	{
 	  m_host = host;
 	  m_plugin = plugin;
 	  m_entry = entry;
 	  m_entrystrings = strings;
-
-	  InitializeComponent();
+      PwEntryForm = form;
+      InitializeComponent();
 	  cbx_SystemVolume.ActiveShift = 0;
 
 	  SetStatus(null);
@@ -527,7 +529,7 @@ namespace KeeLocker.Forms
 
 	private void btn_Unlock_Click(object sender, EventArgs e)
 	{
-	  KeePassLib.Collections.ProtectedStringDictionary Strings = m_entry.Strings;
+	  KeePassLib.Collections.ProtectedStringDictionary Strings = m_entrystrings;
 	  KeePassLib.Security.ProtectedString Password = Strings.Get(KeeLockerExt.StringName_Password);
 	  KeePassLib.Security.ProtectedString IsRecoveryKey = Strings.Get(KeeLockerExt.StringName_IsRecoveryKey);
 	  this.btn_Unlock.Enabled = false;
@@ -594,11 +596,16 @@ namespace KeeLocker.Forms
 	  _selected = selected;
 	  if (_selected)
 	  {
-		SettingsLoad();
+		if (PwEntryForm != null)
+		  PwEntryForm.UpdateEntryStrings(true, false);
+
+        SettingsLoad();
 	  }
 	  else
 	  {
 		SettingsSave();
+		if (PwEntryForm != null)
+		  PwEntryForm.UpdateEntryStrings(false, false);
 	  }
 	}
 
