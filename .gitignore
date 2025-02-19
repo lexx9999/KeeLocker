@@ -10,3 +10,5 @@
 /KeeLocker.plgx
 /RevEng
 /__pycache__/
+/.venv/
+/.idea
