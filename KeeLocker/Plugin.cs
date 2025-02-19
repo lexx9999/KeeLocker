@@ -192,6 +192,12 @@ namespace KeeLocker
 
 	private void OnDriveConnected()
 	{
+	  if (m_host.MainWindow.InvokeRequired)
+	  {
+	    // trampoline to run on main thread, avoid possible race condition
+		m_host.MainWindow.Invoke(new Action(OnDriveConnected));
+        return;
+	  }
 	  List<PwDatabase> OpenDatabases = m_host.MainWindow.DocumentManager.GetOpenDatabases();
 	  foreach (KeePassLib.PwDatabase Database in OpenDatabases)
 	  {
