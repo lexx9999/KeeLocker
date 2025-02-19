@@ -317,12 +317,25 @@ namespace KeeLocker.Forms
 
 		private void SettingsSave()
 		{
-			SettingsSave(KeeLockerExt.StringName_DriveIdType, m_DriveIdType == Common.DriveIdTypeDefault ? "" : m_DriveIdType.ToString());
-			SettingsSave(KeeLockerExt.StringName_DriveMountPoint, m_DriveMountPoint);
-			SettingsSave(KeeLockerExt.StringName_DriveGUID, m_DriveGUID);
-			SettingsSave(KeeLockerExt.StringName_UnlockOnOpening, Common.BoolFor(m_UnlockOnOpening, Common.DefaultUnlockOnOpening));
-			SettingsSave(KeeLockerExt.StringName_UnlockOnConnection, Common.BoolFor(m_UnlockOnConnection, Common.DefaultUnlockOnConnection));
-			SettingsSave(KeeLockerExt.StringName_IsRecoveryKey, Common.BoolFor(m_IsRecoveryKey, Common.DefaultIsRecoveryKey));
+			if (string.IsNullOrEmpty(m_DriveMountPoint) && string.IsNullOrEmpty(m_DriveGUID))
+			{
+				// if neither mountpoint nor volume is set clear all KeeLocker values
+				SettingsSave(KeeLockerExt.StringName_DriveIdType, null);
+				SettingsSave(KeeLockerExt.StringName_DriveMountPoint, null);
+				SettingsSave(KeeLockerExt.StringName_DriveGUID, null);
+				SettingsSave(KeeLockerExt.StringName_UnlockOnOpening, null);
+				SettingsSave(KeeLockerExt.StringName_UnlockOnConnection, null);
+				SettingsSave(KeeLockerExt.StringName_IsRecoveryKey, null);
+			}
+			else
+			{
+				SettingsSave(KeeLockerExt.StringName_DriveIdType, m_DriveIdType == Common.DriveIdTypeDefault ? "" : m_DriveIdType.ToString());
+				SettingsSave(KeeLockerExt.StringName_DriveMountPoint, m_DriveMountPoint);
+				SettingsSave(KeeLockerExt.StringName_DriveGUID, m_DriveGUID);
+				SettingsSave(KeeLockerExt.StringName_UnlockOnOpening, Common.BoolFor(m_UnlockOnOpening, Common.DefaultUnlockOnOpening));
+				SettingsSave(KeeLockerExt.StringName_UnlockOnConnection, Common.BoolFor(m_UnlockOnConnection, Common.DefaultUnlockOnConnection));
+				SettingsSave(KeeLockerExt.StringName_IsRecoveryKey, Common.BoolFor(m_IsRecoveryKey, Common.DefaultIsRecoveryKey));
+			}
 		}
 
 
