@@ -161,13 +161,12 @@ namespace KeeLocker.Forms
 
 
 
-	private IList<VolumeInfo> EnumVolumeInfo()
+	public static IList<VolumeInfo> EnumVolumeInfo()
 	{
 	  int M = 1024;
 	  IntPtr INVALID_HANDLE_VALUE = new IntPtr(-1);
 
 	  IList<VolumeInfo> volumeInfo = new List<VolumeInfo>();
-
 
 	  StringBuilder sb = new StringBuilder(M);
 	  IntPtr H = FveApi.FindFirstVolume(sb, (uint)sb.Capacity);

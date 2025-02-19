@@ -1,4 +1,5 @@
-﻿using KeePassLib;
+﻿using KeeLocker.Forms;
+using KeePassLib;
 using KeePassLib.Security;
 using System;
 using System.Collections.Generic;
@@ -207,7 +208,7 @@ namespace KeeLocker
 
 	private void UnlockThisDB(object sender, EventArgs e)
 	{
-	  UnlockDatabase(m_host.MainWindow.ActiveDatabase, EUnlockReason.UserRequest, sender as ToolStripMenuItem);
+	  UnlockDatabase(m_host.MainWindow.ActiveDatabase, EUnlockReason.DatabaseOpening, sender as ToolStripMenuItem);
 	}
 
 	private void UnlockGroup(object sender, EventArgs e)
@@ -261,9 +262,14 @@ namespace KeeLocker
       // filter attempts by results of FindFirstVolumeW ... and QueryDosDeviceW
       // https://learn.microsoft.com/en-us/windows/win32/fileio/displaying-volume-paths
 
+      var VolumeInfos =KeeLocker.Forms.KeeLockerEntryTab.EnumVolumeInfo();
+
+
       bool success = true;
 	  foreach (BitLockerItem item in bitLockerItems)
 	  {
+		if (!item.MaybeThisSystem(VolumeInfos))
+		  continue;
 		try
 		{
 		  FveApi.Result result = item.Unlock();
@@ -317,7 +323,7 @@ namespace KeeLocker
 
 		KeePassLib.Security.ProtectedString DriveMountPoint = Strings.Get(StringName_DriveMountPoint);
 		KeePassLib.Security.ProtectedString DriveGUID = Strings.Get(StringName_DriveGUID);
-		if (!((DriveMountPoint == null || DriveMountPoint.IsEmpty) && (DriveGUID == null || DriveGUID.IsEmpty)))
+		if (((DriveMountPoint == null || DriveMountPoint.IsEmpty) && (DriveGUID == null || DriveGUID.IsEmpty)))
 		  continue;
 
 		KeePassLib.Security.ProtectedString DriveIdTypeStr = Strings.Get(StringName_DriveIdType);
@@ -325,7 +331,7 @@ namespace KeeLocker
 		KeePassLib.Security.ProtectedString Password = Strings.Get(StringName_Password);
 		bool IsRecoveryKey_bool = Forms.KeeLockerEntryTab.GetBoolSetting(IsRecoveryKey,  Forms.KeeLockerEntryTab.DefaultIsRecoveryKey);
 
-		if (Password == null)
+		if (Password == null || Password.IsEmpty)
 		  continue;
 		EDriveIdType DriveIdType = Forms.KeeLockerEntryTab.GetDriveIdTypeFromString(DriveIdTypeStr);
 		mapped.Add(new BitLockerItem(DriveIdType, DriveMountPoint, DriveGUID, Password, IsRecoveryKey_bool));
@@ -351,7 +357,31 @@ namespace KeeLocker
 		IsRecoveryKey = isRecoveryKey;
 	  }
 
-	  internal FveApi.Result Unlock()
+	  internal bool MaybeThisSystem(IEnumerable<KeeLockerEntryTab.VolumeInfo> volumeInfos)
+	  {
+		foreach (KeeLockerEntryTab.VolumeInfo vi in volumeInfos)
+		{
+		  if (DriveIdType != vi.DriveIdType)
+			continue;
+
+		  switch (DriveIdType)
+		  {
+			case EDriveIdType.MountPoint:
+			  if (!string.IsNullOrEmpty(vi.MountPoint) && DriveMountPoint != null && !DriveMountPoint.IsEmpty &&
+			  string.Equals(vi.MountPoint, DriveMountPoint.ReadString(), StringComparison.InvariantCultureIgnoreCase))
+				return true;
+			  break;
+			case EDriveIdType.GUID:
+			  if (!string.IsNullOrEmpty(vi.Volume) && DriveGUID != null && !DriveGUID.IsEmpty &&
+				string.Equals(vi.Volume, DriveGUID.ReadString(), StringComparison.InvariantCultureIgnoreCase))
+				return true;
+			  break;
+		  }
+		}
+		return false;
+	  }
+
+      internal FveApi.Result Unlock()
 	  {
 		string driveMountPoint = (DriveIdType == EDriveIdType.MountPoint && DriveMountPoint != null) ? DriveMountPoint.ReadString() : "";
 		string driveGUID = (DriveIdType == EDriveIdType.GUID && DriveGUID != null) ? DriveGUID.ReadString() : "";

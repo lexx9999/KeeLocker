@@ -2,10 +2,11 @@
 *.userprefs
 *.suo
 /.vs
-/.keepassdev
+/.keepassdev/
 /KeeLocker/bin
 /KeeLocker/obj
 /KeeLocker_private_signing_key.p8
 /Database.kdbx
 /KeeLocker.plgx
 /RevEng
+/__pycache__/
