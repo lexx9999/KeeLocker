@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Drawing;
 using System.Text;
 using System.Windows.Forms;
@@ -18,53 +17,26 @@ namespace KeeLocker.Forms
     private readonly PwEntryForm PwEntryForm;
 
     // settings
-    private KeeLockerExt.EDriveIdType m_DriveIdType;
+    private EDriveIdType m_DriveIdType;
 	private string m_DriveMountPoint;
 	private string m_DriveGUID;
 	private bool m_UnlockOnOpening;
 	private bool m_UnlockOnConnection;
 	private bool m_IsRecoveryKey;
 
-	const KeeLockerExt.EDriveIdType DriveIdTypeDefault = KeeLockerExt.EDriveIdType.MountPoint;
-	public const bool DefaultIsRecoveryKey = false;
-	public const bool DefaultUnlockOnConnection = false;
-	public const bool DefaultUnlockOnOpening = false;
 
 
-	public static KeeLockerExt.EDriveIdType GetDriveIdTypeFromString(KeePassLib.Security.ProtectedString DriveIdType)
+	public static EDriveIdType GetDriveIdTypeFromString(KeePassLib.Security.ProtectedString DriveIdType)
 	{
 	  if (DriveIdType != null)
 	  {
 		string DriveIdTypeString = DriveIdType.ReadString();
-		if (DriveIdTypeString == KeeLockerExt.EDriveIdType.MountPoint.ToString())
-		  return KeeLockerExt.EDriveIdType.MountPoint;
-		else if (DriveIdTypeString == KeeLockerExt.EDriveIdType.GUID.ToString())
-		  return KeeLockerExt.EDriveIdType.GUID;
+		if (DriveIdTypeString == EDriveIdType.MountPoint.ToString())
+		  return EDriveIdType.MountPoint;
+		else if (DriveIdTypeString == EDriveIdType.GUID.ToString())
+		  return EDriveIdType.GUID;
 	  }
-	  return DriveIdTypeDefault;
-	}
-
-	public static bool GetBoolSetting(KeePassLib.Security.ProtectedString Value, bool defaultValue)
-	{
-	  if (Value == null)
-		return defaultValue;
-	  string tmp = Value.ReadString().Trim().ToLower();
-	  switch (tmp)
-	  {
-		case "true":
-		  return true;
-		case "false":
-		  return false;
-		default:
-		  return defaultValue;
-	  }
-	}
-	private static string BoolFor(bool Value, bool defaultValue)
-	{
-	  if (Value == defaultValue)
-		return "";
-
-	  return Value ? "true" : "false";
+	  return Common.DriveIdTypeDefault;
 	}
 
 	private IList<VolumeInfo> VolumeInfos = new List<VolumeInfo>();
@@ -83,83 +55,6 @@ namespace KeeLocker.Forms
 
 	  UpdateUi();
 	}
-
-	public class VolumeInfo
-	{
-	  public string MountPoint { get; set; }
-	  public string Volume { get; set; }
-	  public KeeLockerExt.EDriveIdType DriveIdType { get; set; }
-	  public System.IO.DriveInfo DriveInfo { get; set; }
-	  public string DisplayText
-	  {
-		get
-		{
-		  StringBuilder sb = new StringBuilder();
-		  if (!string.IsNullOrWhiteSpace(MountPoint))
-		  {
-			string mp = MountPoint.Trim().TrimEnd('\\');
-			sb.Append(mp);
-		  }
-
-		  if (DriveInfo != null)
-		  {
-			try
-			{
-			  if (!string.IsNullOrWhiteSpace(DriveInfo.VolumeLabel))
-			  {
-				if (sb.Length > 0) sb.Append(' ');
-				sb.AppendFormat("[{0}]", DriveInfo.VolumeLabel.Trim());
-			  }
-			  if (DriveInfo.TotalSize > 0)
-			  {
-				if (sb.Length > 0) sb.Append(' ');
-				sb.AppendFormat("{0}", format_size(DriveInfo.TotalSize));
-			  }
-			}
-			catch (Exception) { /*may throw if drive is encrypted */ }
-
-
-		  }
-
-		  if (!string.IsNullOrWhiteSpace(Volume))
-		  {
-			string vol = Volume.Trim();
-			if (vol.StartsWith("\\\\?\\") && vol.EndsWith("\\"))
-			  vol = vol.Substring(4).TrimEnd('\\');
-			if (sb.Length > 0) sb.Append(" - ");
-			sb.Append(vol);
-		  }
-
-		  return sb.ToString();
-		}
-	  }
-	}
-
-
-	private static string format_size(long totalSize)
-	{
-	  if (totalSize <= 0)
-		return "?";
-
-	  const long D = 1024;
-	  const string suffix = "  KBMBGBTB";
-	  if (totalSize < 1024)
-		return totalSize.ToString();
-	  double f = totalSize;
-	  int s = 0;
-	  while (f >= D && s < 4)
-	  {
-		f /= D;
-		s++;
-	  }
-	  if (f < 100)
-	  {
-		return f.ToString("F1") + suffix.Substring(s * 2, 2);
-	  }
-	  return Math.Floor(f).ToString("F0") + suffix.Substring(s * 2, 2); ;
-	}
-
-
 
 	public static IList<VolumeInfo> EnumVolumeInfo()
 	{
@@ -189,22 +84,20 @@ namespace KeeLocker.Forms
 		  uint len = FveApi.QueryDosDevice(vshort, sb, (uint)sb.Capacity);
 
 		  string disk = (len > 0) ? sb.ToString() : null;
-		  Debug.WriteLine("{0} -> {1}", vshort, disk);
 		  List<string> tmp = null;
 		  bool added = false;
 		  if (FveApi.GetVolumePathNamesForVolumeName(vol, out tmp) && tmp.Count > 0)
 		  {
-			Debug.WriteLine("   {0}", string.Join(",", tmp), false);
 			foreach (string dl in tmp)
 			{
 			  added = true;
-			  VolumeInfo vi = new VolumeInfo { MountPoint = dl, Volume = vol, DriveIdType = KeeLockerExt.EDriveIdType.GUID };
+			  VolumeInfo vi = new VolumeInfo { MountPoint = dl, Volume = vol, DriveIdType = EDriveIdType.GUID };
 			  volumeInfo.Add(vi);
 			}
 		  }
 		  if (!added)
 		  {
-			VolumeInfo vi = new VolumeInfo { MountPoint = null, Volume = vol, DriveIdType = KeeLockerExt.EDriveIdType.GUID };
+			VolumeInfo vi = new VolumeInfo { MountPoint = null, Volume = vol, DriveIdType = EDriveIdType.GUID };
 			volumeInfo.Add(vi);
 		  }
 
@@ -241,7 +134,7 @@ namespace KeeLocker.Forms
 				  DriveInfo = di,
 				  MountPoint = di.Name,
 				  Volume = null,
-				  DriveIdType = KeeLockerExt.EDriveIdType.MountPoint
+				  DriveIdType = EDriveIdType.MountPoint
 				});
 
 			  }
@@ -262,7 +155,7 @@ namespace KeeLocker.Forms
 	  {
 		MountPoint = "",
 		Volume = "",
-		DriveIdType = DriveIdTypeDefault
+		DriveIdType = Common.DriveIdTypeDefault
 	  }));
 
 	  SortedSet<string> mpd = new SortedSet<string>();
@@ -330,15 +223,15 @@ namespace KeeLocker.Forms
 
 	  {
 		KeePassLib.Security.ProtectedString UnlockOnOpening = m_entrystrings.Get(KeeLockerExt.StringName_UnlockOnOpening);
-		m_UnlockOnOpening = GetBoolSetting(UnlockOnOpening, DefaultUnlockOnOpening);
+		m_UnlockOnOpening = Common.GetBoolSetting(UnlockOnOpening, Common.DefaultUnlockOnOpening);
 	  }
 	  {
 		KeePassLib.Security.ProtectedString UnlockOnConnection = m_entrystrings.Get(KeeLockerExt.StringName_UnlockOnConnection);
-		m_UnlockOnConnection = GetBoolSetting(UnlockOnConnection, DefaultUnlockOnConnection);
+		m_UnlockOnConnection = Common.GetBoolSetting(UnlockOnConnection, Common.DefaultUnlockOnConnection);
 	  }
 	  {
 		KeePassLib.Security.ProtectedString IsRecoveryKey = m_entrystrings.Get(KeeLockerExt.StringName_IsRecoveryKey);
-		m_IsRecoveryKey = GetBoolSetting(IsRecoveryKey, DefaultIsRecoveryKey);
+		m_IsRecoveryKey = Common.GetBoolSetting(IsRecoveryKey, Common.DefaultIsRecoveryKey);
 	  }
 
 	  if (string.IsNullOrEmpty(m_DriveGUID) && string.IsNullOrEmpty(m_DriveMountPoint))
@@ -353,8 +246,8 @@ namespace KeeLocker.Forms
 		if (vi != null && vi.Volume != null && m_DriveIdType == vi.DriveIdType)
 		{
 
-		  if ((vi.DriveIdType == KeeLockerExt.EDriveIdType.GUID && vi.Volume.Equals(m_DriveGUID, StringComparison.InvariantCultureIgnoreCase))
-		  || (vi.DriveIdType == KeeLockerExt.EDriveIdType.MountPoint && vi.MountPoint.Equals(m_DriveMountPoint, StringComparison.InvariantCultureIgnoreCase)))
+		  if ((vi.DriveIdType == EDriveIdType.GUID && vi.Volume.Equals(m_DriveGUID, StringComparison.InvariantCultureIgnoreCase))
+		  || (vi.DriveIdType == EDriveIdType.MountPoint && vi.MountPoint.Equals(m_DriveMountPoint, StringComparison.InvariantCultureIgnoreCase)))
 		  {
 			cbx_SystemVolume.SelectedItem = tmp;
 			found = true;
@@ -378,13 +271,13 @@ namespace KeeLocker.Forms
 
 	  switch (m_DriveIdType)
 	  {
-		case KeeLockerExt.EDriveIdType.GUID:
+		case EDriveIdType.GUID:
 		  if (!string.IsNullOrWhiteSpace(m_DriveGUID))
 		  {
 
 		  }
 		  break;
-		case KeeLockerExt.EDriveIdType.MountPoint:
+		case EDriveIdType.MountPoint:
 		  if (!string.IsNullOrWhiteSpace(m_DriveMountPoint))
 		  {
 
@@ -427,12 +320,12 @@ namespace KeeLocker.Forms
 
 	private void SettingsSave()
 	{
-	  SettingsSave(KeeLockerExt.StringName_DriveIdType, m_DriveIdType == DriveIdTypeDefault ? "" : m_DriveIdType.ToString());
+	  SettingsSave(KeeLockerExt.StringName_DriveIdType, m_DriveIdType == Common.DriveIdTypeDefault ? "" : m_DriveIdType.ToString());
 	  SettingsSave(KeeLockerExt.StringName_DriveMountPoint, m_DriveMountPoint);
 	  SettingsSave(KeeLockerExt.StringName_DriveGUID, m_DriveGUID);
-	  SettingsSave(KeeLockerExt.StringName_UnlockOnOpening, BoolFor(m_UnlockOnOpening, DefaultUnlockOnOpening));
-	  SettingsSave(KeeLockerExt.StringName_UnlockOnConnection, BoolFor(m_UnlockOnConnection, DefaultUnlockOnConnection));
-	  SettingsSave(KeeLockerExt.StringName_IsRecoveryKey, BoolFor(m_IsRecoveryKey, DefaultIsRecoveryKey));
+	  SettingsSave(KeeLockerExt.StringName_UnlockOnOpening, Common.BoolFor(m_UnlockOnOpening, Common.DefaultUnlockOnOpening));
+	  SettingsSave(KeeLockerExt.StringName_UnlockOnConnection, Common.BoolFor(m_UnlockOnConnection, Common.DefaultUnlockOnConnection));
+	  SettingsSave(KeeLockerExt.StringName_IsRecoveryKey, Common.BoolFor(m_IsRecoveryKey, Common.DefaultIsRecoveryKey));
 	}
 
 
@@ -442,8 +335,8 @@ namespace KeeLocker.Forms
 	  cbx_DriveMountPoint.Text = m_DriveMountPoint;
 	  cbx_DriveGUID.Text = m_DriveGUID;
 
-	  rdo_MountPoint.Checked = m_DriveIdType == KeeLockerExt.EDriveIdType.MountPoint;
-	  rdo_DriveGUID.Checked = m_DriveIdType == KeeLockerExt.EDriveIdType.GUID;
+	  rdo_MountPoint.Checked = m_DriveIdType == EDriveIdType.MountPoint;
+	  rdo_DriveGUID.Checked = m_DriveIdType == EDriveIdType.GUID;
 
 	  cbx_DriveMountPoint.Enabled = rdo_MountPoint.Checked;
 	  btn_DriveGUID.Enabled = rdo_MountPoint.Checked;
@@ -485,14 +378,14 @@ namespace KeeLocker.Forms
 
 	private void rdo_MountPoint_Click(object sender, EventArgs e)
 	{
-	  m_DriveIdType = KeeLockerExt.EDriveIdType.MountPoint;
+	  m_DriveIdType = EDriveIdType.MountPoint;
 	  UpdateUi();
 	  SetStatus(null);
 	}
 
 	private void rdo_DriveGUID_Click(object sender, EventArgs e)
 	{
-	  m_DriveIdType = KeeLockerExt.EDriveIdType.GUID;
+	  m_DriveIdType = EDriveIdType.GUID;
 	  UpdateUi();
 	  SetStatus(null);
 	}
@@ -534,13 +427,13 @@ namespace KeeLocker.Forms
 	  this.btn_Unlock.Enabled = false;
 	  SetStatus("Unlocking...");
 
-	  var item = new KeeLockerExt.BitLockerItem(m_DriveIdType,
+	  var item = new BitLockerItem(m_DriveIdType,
 		new KeePassLib.Security.ProtectedString(true, m_DriveMountPoint),
 		new KeePassLib.Security.ProtectedString(true, m_DriveGUID),
 		Password,
-		GetBoolSetting(IsRecoveryKey, DefaultIsRecoveryKey));
+        Common.GetBoolSetting(IsRecoveryKey, Common.DefaultIsRecoveryKey));
 
-	  m_plugin.UnlockBitLocker(new List<KeeLockerExt.BitLockerItem> { item }, KeeLockerExt.EUnlockReason.UserRequest, this, (bool success) =>
+	  Common.UnlockBitLocker(new List<BitLockerItem> { item }, EUnlockReason.UserRequest, this, (bool success) =>
 	  {
 		this.btn_Unlock.Enabled = true;
 		if (success) SetStatus("Successfully unlocked");
@@ -556,13 +449,13 @@ namespace KeeLocker.Forms
 	  if (Ok)
 	  {
 		m_DriveGUID = DriveGUID;
-		m_DriveIdType = KeeLockerExt.EDriveIdType.GUID;
+		m_DriveIdType = EDriveIdType.GUID;
 		SetStatus(null);
 	  }
 	  else
 	  {
 		m_DriveGUID = "";
-		m_DriveIdType = KeeLockerExt.EDriveIdType.MountPoint;
+		m_DriveIdType = EDriveIdType.MountPoint;
 		SetStatus("Unable to get GUID", true);
 	  }
 	  UpdateUi();
@@ -612,13 +505,13 @@ namespace KeeLocker.Forms
 	{
 	  if (DialogResult.Yes != MessageBox.Show(btn_Clear,"Reset all KeeLocker entry setting", "Clear settings", MessageBoxButtons.YesNo))
 		return;
-	  m_DriveIdType = DriveIdTypeDefault;
+	  m_DriveIdType = Common.DriveIdTypeDefault;
 
 	  m_DriveGUID = "";
 	  m_DriveMountPoint = "";
-	  m_UnlockOnConnection = DefaultUnlockOnConnection;
-	  m_UnlockOnOpening = DefaultUnlockOnOpening;
-	  m_IsRecoveryKey = DefaultIsRecoveryKey;
+	  m_UnlockOnConnection = Common.DefaultUnlockOnConnection;
+	  m_UnlockOnOpening = Common.DefaultUnlockOnOpening;
+	  m_IsRecoveryKey = Common.DefaultIsRecoveryKey;
 	  UpdateUi();
 	}
   }

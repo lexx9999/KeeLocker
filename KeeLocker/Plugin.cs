@@ -1,14 +1,12 @@
 ﻿using KeeLocker.Forms;
 using KeePassLib;
-using KeePassLib.Security;
 using System;
 using System.Collections.Generic;
-using System.Threading;
 using System.Windows.Forms;
 
 namespace KeeLocker
 {
-  public class KeeLockerExt : KeePass.Plugins.Plugin
+  public partial class KeeLockerExt : KeePass.Plugins.Plugin
   {
 	public const string StringName_DriveMountPoint = "KeeLockerMountPoint";
 	public const string StringName_DriveGUID = "KeeLockerGUID";
@@ -18,12 +16,6 @@ namespace KeeLocker
 	public const string StringName_IsRecoveryKey = "KeeLockerIsRecoveryKey";
 
 	public const string StringName_Password = "Password";
-
-	public enum EDriveIdType
-	{
-	  MountPoint,
-	  GUID
-	}
 	internal KeePass.Plugins.IPluginHost m_host;
 	internal FveApi.SSubscription m_Subscription;
 
@@ -179,12 +171,6 @@ namespace KeeLocker
 	}
 
 
-    internal enum EUnlockReason
-	{
-	  DatabaseOpening,
-	  DriveConnected,
-	  UserRequest
-	};
 
 	private void OnKPDBOpen(object sender, KeePass.Forms.FileOpenedEventArgs e)
 	{
@@ -225,7 +211,7 @@ namespace KeeLocker
 		return;
 	  System.Windows.Forms.ToolStripMenuItem UnlockEntry = sender as System.Windows.Forms.ToolStripMenuItem;
 	 if(UnlockEntry!=null) UnlockEntry.Enabled = false;
-	  UnlockBitLocker(unlockset, KeeLockerExt.EUnlockReason.UserRequest, m_host.MainWindow, (bool success) =>
+	  Common.UnlockBitLocker(unlockset, EUnlockReason.UserRequest, m_host.MainWindow, (bool success) =>
 	{
 	  if (UnlockEntry != null) UnlockEntry.Enabled = true;
 	});
@@ -244,7 +230,7 @@ namespace KeeLocker
 	  if (unlockset.Count == 0)
 		return;
 	  if (sender != null) sender.Enabled = false;
-	  UnlockBitLocker(unlockset, UnlockReason, m_host.MainWindow, (bool success) =>
+	 Common.UnlockBitLocker(unlockset, UnlockReason, m_host.MainWindow, (bool success) =>
 	  {
 		if (sender != null) sender.Enabled = true;
 
@@ -257,46 +243,6 @@ namespace KeeLocker
 	}
 
 
-	private static void TryUnlockVolume_Thread(IEnumerable<BitLockerItem> bitLockerItems, EUnlockReason UnlockReason, System.Windows.Forms.Control target, UnlockResultDelegate unlockResult)
-	{
-      // filter attempts by results of FindFirstVolumeW ... and QueryDosDeviceW
-      // https://learn.microsoft.com/en-us/windows/win32/fileio/displaying-volume-paths
-
-      var VolumeInfos =KeeLocker.Forms.KeeLockerEntryTab.EnumVolumeInfo();
-
-
-      bool success = true;
-	  foreach (BitLockerItem item in bitLockerItems)
-	  {
-		if (!item.MaybeThisSystem(VolumeInfos))
-		  continue;
-		try
-		{
-		  FveApi.Result result = item.Unlock();
-		  if (result != FveApi.Result.Ok)
-			success = false;
-
-		}
-		catch (Exception Ex)
-		{
-		  string Messages = Ex.ToString();
-		  success = false;
-		}
-	  }
-	  if (target != null && target.InvokeRequired) target.Invoke(new KeeLockerExt.UnlockResultDelegate(unlockResult), new object[] { success });
-	  else if (unlockResult != null) unlockResult(success);
-	}
-
-	public delegate void UnlockResultDelegate(bool Success);
-
-
-
-	internal void UnlockBitLocker(IEnumerable<BitLockerItem> bitLockerItems, EUnlockReason UnlockReason, System.Windows.Forms.Control target = null, UnlockResultDelegate unlockResult = null)
-	{
-	  Thread thread = new Thread(() => TryUnlockVolume_Thread(bitLockerItems, UnlockReason, target, unlockResult));
-	  thread.Start();
-	}
-
 	private IList<BitLockerItem> mapUnlockItems(IEnumerable<KeePassLib.PwEntry> pwEntries, EUnlockReason UnlockReason)
 	{
 	  List<BitLockerItem> mapped = new List<BitLockerItem>();
@@ -306,8 +252,8 @@ namespace KeeLocker
 		KeePassLib.Collections.ProtectedStringDictionary Strings = Entry.Strings;
 		KeePassLib.Security.ProtectedString UnlockOnOpening = Strings.Get(StringName_UnlockOnOpening);
 		KeePassLib.Security.ProtectedString UnlockOnConnection = Strings.Get(StringName_UnlockOnConnection);
-		bool UnlockOnOpening_bool = Forms.KeeLockerEntryTab.GetBoolSetting(UnlockOnOpening,  Forms.KeeLockerEntryTab.DefaultUnlockOnOpening);
-		bool UnlockOnConnection_bool = Forms.KeeLockerEntryTab.GetBoolSetting(UnlockOnConnection,  Forms.KeeLockerEntryTab.DefaultUnlockOnConnection);
+		bool UnlockOnOpening_bool = Common.GetBoolSetting(UnlockOnOpening, Common.DefaultUnlockOnOpening);
+		bool UnlockOnConnection_bool = Common.GetBoolSetting(UnlockOnConnection, Common.DefaultUnlockOnConnection);
 
 		switch (UnlockReason)
 		{
@@ -329,7 +275,7 @@ namespace KeeLocker
 		KeePassLib.Security.ProtectedString DriveIdTypeStr = Strings.Get(StringName_DriveIdType);
 		KeePassLib.Security.ProtectedString IsRecoveryKey = Strings.Get(StringName_IsRecoveryKey);
 		KeePassLib.Security.ProtectedString Password = Strings.Get(StringName_Password);
-		bool IsRecoveryKey_bool = Forms.KeeLockerEntryTab.GetBoolSetting(IsRecoveryKey,  Forms.KeeLockerEntryTab.DefaultIsRecoveryKey);
+		bool IsRecoveryKey_bool = Common.GetBoolSetting(IsRecoveryKey, Common.DefaultIsRecoveryKey);
 
 		if (Password == null || Password.IsEmpty)
 		  continue;
@@ -340,67 +286,5 @@ namespace KeeLocker
 	}
 
 
-	internal class BitLockerItem
-	{
-	  private readonly EDriveIdType DriveIdType;
-	  private readonly KeePassLib.Security.ProtectedString DriveMountPoint;
-	  private readonly KeePassLib.Security.ProtectedString DriveGUID;
-	  private readonly KeePassLib.Security.ProtectedString Password;
-	  private readonly bool IsRecoveryKey;
-
-	  internal BitLockerItem(EDriveIdType driveIdType, ProtectedString driveMountPoint, ProtectedString driveGUID, ProtectedString password, bool isRecoveryKey)
-	  {
-		DriveIdType = driveIdType;
-		DriveMountPoint = driveMountPoint;
-		DriveGUID = driveGUID;
-		Password = password;
-		IsRecoveryKey = isRecoveryKey;
-	  }
-
-	  internal bool MaybeThisSystem(IEnumerable<KeeLockerEntryTab.VolumeInfo> volumeInfos)
-	  {
-		foreach (KeeLockerEntryTab.VolumeInfo vi in volumeInfos)
-		{
-		  if (DriveIdType != vi.DriveIdType)
-			continue;
-
-		  switch (DriveIdType)
-		  {
-			case EDriveIdType.MountPoint:
-			  if (!string.IsNullOrEmpty(vi.MountPoint) && DriveMountPoint != null && !DriveMountPoint.IsEmpty &&
-			  string.Equals(vi.MountPoint, DriveMountPoint.ReadString(), StringComparison.InvariantCultureIgnoreCase))
-				return true;
-			  break;
-			case EDriveIdType.GUID:
-			  if (!string.IsNullOrEmpty(vi.Volume) && DriveGUID != null && !DriveGUID.IsEmpty &&
-				string.Equals(vi.Volume, DriveGUID.ReadString(), StringComparison.InvariantCultureIgnoreCase))
-				return true;
-			  break;
-		  }
-		}
-		return false;
-	  }
-
-      internal FveApi.Result Unlock()
-	  {
-		string driveMountPoint = (DriveIdType == EDriveIdType.MountPoint && DriveMountPoint != null) ? DriveMountPoint.ReadString() : "";
-		string driveGUID = (DriveIdType == EDriveIdType.GUID && DriveGUID != null) ? DriveGUID.ReadString() : "";
-
-		if (driveGUID.Length > 0)
-		{
-		  driveMountPoint = "";
-		}
-		else if (driveMountPoint.Length > 0)
-		{
-		  driveGUID = "";
-		}
-		else
-		{
-		  return FveApi.Result.WrongPassPhrase;
-		}
-
-		return FveApi.UnlockVolume(driveMountPoint, driveGUID, Password.ReadString(), IsRecoveryKey);
-	  }
-	}
   }
 }
