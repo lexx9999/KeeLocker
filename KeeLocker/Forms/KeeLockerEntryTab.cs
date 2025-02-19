@@ -194,7 +194,6 @@ namespace KeeLocker.Forms
 				this.cbx_DriveMountPoint.Item_Add(new KeeLocker.Forms.RichComboBox.SItem(v, RichComboBox.EItemType.Active));
 			}
 			this.cbx_DriveMountPoint.Item_Add(new KeeLocker.Forms.RichComboBox.SItem("Or any valid mountpoint path", RichComboBox.EItemType.Inactive));
-			this.cbx_DriveMountPoint.Item_Add(new KeeLocker.Forms.RichComboBox.SItem("C:\\Path\\To\\MountPoint", RichComboBox.EItemType.Active));
 			if (mpf.Count == 0) mpf.Add("C:\\Path\\To\\MountPoint");
 
 			foreach (string v in mpf)
@@ -261,7 +260,7 @@ namespace KeeLocker.Forms
 					Volume = m_DriveGUID,
 					MountPoint = m_DriveMountPoint,
 				};
-				int z = cbx_SystemVolume.Item_Add(new RichComboBox.SItem(vi.DisplayText, RichComboBox.EItemType.Active, vi));
+				int z = cbx_SystemVolume.Item_Add(new RichComboBox.SItem("(Current) "+vi.DisplayText, RichComboBox.EItemType.Active, vi));
 				cbx_SystemVolume.SelectedIndex = z;
 
 			}

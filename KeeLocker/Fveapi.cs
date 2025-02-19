@@ -131,7 +131,35 @@ namespace KeeLocker
 
 		}
 
+		[Flags]
+		public enum FileSystemFeature : uint
+		{
+			CasePreservedNames = 2,
+			CaseSensitiveSearch = 1,
+			DaxVolume = 0x20000000,
+			FileCompression = 0x10,
+			NamedStreams = 0x40000,
+			PersistentACLS = 8,
+			ReadOnlyVolume = 0x80000,
+			SequentialWriteOnce = 0x100000,
+			SupportsEncryption = 0x20000,
+			SupportsExtendedAttributes = 0x00800000,
+			SupportsHardLinks = 0x00400000,
+			SupportsObjectIDs = 0x10000,
+			SupportsOpenByFileId = 0x01000000,
+			SupportsReparsePoints = 0x80,
+			SupportsSparseFiles = 0x40,
+			SupportsTransactions = 0x200000,
+			SupportsUsnJournal = 0x02000000,
+			UnicodeOnDisk = 4,
+			VolumeIsCompressed = 0x8000,
+			VolumeQuotas = 0x20
+		}
 
+		[DllImport("Kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+		[return: MarshalAs(UnmanagedType.Bool)]
+		public extern static bool GetVolumeInformation(string rootPathName, [Out] StringBuilder volumeNameBuffer, int volumeNameSize, out uint volumeSerialNumber,
+			out uint maximumComponentLength, out FileSystemFeature fileSystemFlags, [Out] StringBuilder fileSystemNameBuffer, int nFileSystemNameSize);
 
 		public enum Result
 		{

@@ -1,6 +1,8 @@
 ﻿using KeePassLib.Security;
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 
@@ -127,7 +129,7 @@ namespace KeeLocker
 					string mp = MountPoint.Trim().TrimEnd('\\');
 					sb.Append(mp);
 				}
-
+				bool isBitLockerLocked = false;
 				if (DriveInfo != null)
 				{
 					try
@@ -143,9 +145,38 @@ namespace KeeLocker
 							sb.AppendFormat("{0}", Common.FormatSize(DriveInfo.TotalSize));
 						}
 					}
-					catch (Exception) { /*may throw if drive is encrypted */ }
+					catch (IOException x)
+					{
+						uint hr = (uint)Marshal.GetHRForException(x);
+						isBitLockerLocked = (hr == 0x80370000 && -1 != x.Message.IndexOf("BitLocker"));
+
+						/*may throw if drive is encrypted */
+					}
+					catch (Exception) { }
+				}
+				else if (!string.IsNullOrEmpty(Volume))
+				{
+					StringBuilder vn = new StringBuilder(100);
+					StringBuilder fs = new StringBuilder(100);
+					uint vser = 0, _ = 0;
+					FveApi.FileSystemFeature fff;
+					if (FveApi.GetVolumeInformation(Volume, vn, vn.Capacity, out vser, out _, out fff, fs, fs.Capacity))
+					{
+						if (sb.Length > 0) sb.Append(' ');
+						sb.AppendFormat("[{0}]", vn);
+					}
+					else
+					{
+						uint ec = (uint)Marshal.GetLastWin32Error();
+						isBitLockerLocked = (ec == 0x80310000);
+					}
 
 
+				}
+				if (isBitLockerLocked)
+				{
+					if (sb.Length > 0) sb.Append(" ");
+					sb.Append("\u26BF"); // lock
 				}
 
 				if (!string.IsNullOrWhiteSpace(Volume))
