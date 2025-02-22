@@ -2,6 +2,7 @@
 using KeePassLib;
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Windows.Forms;
 
 namespace KeeLocker
@@ -18,12 +19,24 @@ namespace KeeLocker
 		public const string StringName_Password = "Password";
 		internal KeePass.Plugins.IPluginHost m_host;
 		internal FveApi.SSubscription m_Subscription;
+		System.Drawing.Image m_Image = null;
+
 
 		public override string UpdateUrl
 		{
 			get
 			{
 				return "https://raw.github.com/Gugli/KeeLocker/main/VersionInfo.txt";
+			}
+		}
+
+		public override Image SmallIcon
+		{
+			get
+			{
+				if (m_Image == null)
+					m_Image = new System.Drawing.Bitmap(new System.IO.MemoryStream(Properties.Resources.KeeLocker));
+				return m_Image;
 			}
 		}
 
@@ -44,6 +57,7 @@ namespace KeeLocker
 
 			m_Subscription = FveApi.StateChangeNotification_Subscribe(OnDriveConnected);
 
+			// host.CustomConfig.SetString("KeeLockeer_Hello", "Welcome");
 			return true;
 		}
 
@@ -64,6 +78,7 @@ namespace KeeLocker
 			{
 				System.Windows.Forms.ToolStripMenuItem UnlockThisDB = new System.Windows.Forms.ToolStripMenuItem();
 				UnlockThisDB.Text = "KeeLocker unlock volumes in this DB";
+				UnlockThisDB.Image = SmallIcon;
 				UnlockThisDB.Click += this.UnlockThisDB;
 				UnlockThisDB.Paint += delegate (object sender, System.Windows.Forms.PaintEventArgs e)
 				{
@@ -76,6 +91,7 @@ namespace KeeLocker
 			{
 				System.Windows.Forms.ToolStripMenuItem UnlockEntry = new System.Windows.Forms.ToolStripMenuItem();
 				UnlockEntry.Click += this.UnlockEntries;
+				UnlockEntry.Image = SmallIcon;
 				UnlockEntry.Paint += delegate (object sender, System.Windows.Forms.PaintEventArgs e)
 				{
 					KeePassLib.PwEntry[] Entries = m_host.MainWindow.GetSelectedEntries();
@@ -89,6 +105,7 @@ namespace KeeLocker
 			{
 				System.Windows.Forms.ToolStripMenuItem UnlockGroup = new System.Windows.Forms.ToolStripMenuItem();
 				UnlockGroup.Text = "KeeLocker unlock volumes in this group";
+				UnlockGroup.Image = SmallIcon;
 				UnlockGroup.Click += this.UnlockGroup;
 				UnlockGroup.Paint += delegate (object sender, System.Windows.Forms.PaintEventArgs e)
 				{
@@ -236,7 +253,11 @@ namespace KeeLocker
 
 				 if (UnlockReason == EUnlockReason.DatabaseOpening || UnlockReason == EUnlockReason.DriveConnected)
 				 {
-					 m_host.MainWindow.Text = m_host.MainWindow.Text + " - KeeLogger unlocked volumes";
+					 string info = "KeeLogger unlocked volumes";
+					 if (-1 == m_host.MainWindow.Text.IndexOf(info))
+					 {
+						 m_host.MainWindow.Text = m_host.MainWindow.Text + " - " + info;
+					 }
 				 }
 
 			 });

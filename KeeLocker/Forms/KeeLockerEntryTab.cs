@@ -50,6 +50,7 @@ namespace KeeLocker.Forms
 			PwEntryForm = form;
 			InitializeComponent();
 			cbx_SystemVolume.ActiveShift = 0;
+			icon.Image = plugin.SmallIcon;
 
 			SetStatus(null);
 
