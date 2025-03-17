@@ -29,6 +29,7 @@ popd
 del /Q "%KeePassPlugins%\KeeLocker.dll"
 del /Q "%KeePassPlugins%\KeeLocker.plgx"
 copy "%BuildDir%\%Name%.plgx" "%KeePassPlugins%\%Name%.plgx"
+copy "%BuildDir%\%Name%.plgx" "%LocalDir%%Name%.plgx"
 
 "%KeePass%\KeePass.exe" 
 
