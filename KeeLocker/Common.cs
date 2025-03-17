@@ -119,6 +119,25 @@ namespace KeeLocker
 		public string Volume { get; set; }
 		public EDriveIdType DriveIdType { get; set; }
 		public System.IO.DriveInfo DriveInfo { get; set; }
+
+		public Guid[] AuthGuids
+		{
+			get
+			{
+				Guid[] guids = null;
+
+				switch (DriveIdType)
+				{
+					case EDriveIdType.GUID:
+						if (FveApi.TryQueryAuthGuids(Volume, out guids))
+							return guids;
+						break;
+				}
+				return guids;
+			}
+		}
+
+
 		public string DisplayText
 		{
 			get
@@ -149,7 +168,6 @@ namespace KeeLocker
 					{
 						uint hr = (uint)Marshal.GetHRForException(x);
 						isBitLockerLocked = (hr == 0x80370000 && -1 != x.Message.IndexOf("BitLocker"));
-
 						/*may throw if drive is encrypted */
 					}
 					catch (Exception) { }
@@ -170,8 +188,6 @@ namespace KeeLocker
 						uint ec = (uint)Marshal.GetLastWin32Error();
 						isBitLockerLocked = (ec == 0x80310000);
 					}
-
-
 				}
 				if (isBitLockerLocked)
 				{

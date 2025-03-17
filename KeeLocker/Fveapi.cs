@@ -44,12 +44,19 @@ namespace KeeLocker
 			public Int64 rsp_48;
 		};
 
-		internal enum HRESULT
+		internal enum HRESULT : int
 		{
 			S_OK = unchecked((int)0x00000000),
+			S_FALSE = unchecked((int)0x00000001),
 			FVE_E_FAILED_AUTHENTICATION = unchecked((int)0x80310027),
 			FVE_E_NOT_ACTIVATED = unchecked((int)0x80310008),
 		}
+
+		internal static bool Succeeded(HRESULT hr)
+		{
+			return ((int)hr >= 0);
+		}
+
 		internal enum FVE_SECRET_TYPE
 		{
 			PassPhrase = unchecked((int)0x800000),
@@ -70,8 +77,11 @@ namespace KeeLocker
 		[DllImport("FVEAPI.dll", SetLastError = true, CharSet = CharSet.Unicode, EntryPoint = "FveCloseVolume")]
 		internal static extern HRESULT FveCloseVolume(IntPtr HVolume, ref FVE_UNLOCK_SETTINGS UnlockSettings, Int32 FlagsMaybe, Int32 PassPhrase);
 
+		[DllImport("FVEAPI.dll", SetLastError = true, CharSet = CharSet.Unicode, EntryPoint = "FveCloseVolume")]
+		internal static extern HRESULT FveCloseVolume(IntPtr HVolume, IntPtr ZeroUnlockSettings, Int32 FlagsMaybe, Int32 PassPhrase);
+
 		[DllImport("FVEAPI.dll", SetLastError = true, CharSet = CharSet.Unicode, EntryPoint = "FveGetAuthMethodGuids")]
-		internal static extern HRESULT FveGetAuthMethodGuids(IntPtr HVolume, ref Guid[] guids, uint maxGuids, ref uint GuidCount);
+		internal static extern HRESULT FveGetAuthMethodGuids(IntPtr HVolume, byte[] guids, uint maxGuids, ref uint GuidCount);
 		[DllImport("FVEAPI.dll", SetLastError = true, CharSet = CharSet.Unicode, EntryPoint = "FveGetAuthMethodGuids")]
 		internal static extern HRESULT FveGetAuthMethodGuidsQuery(IntPtr HVolume, IntPtr zeroPtr, uint maxGuids, ref uint GuidCount);
 
@@ -310,7 +320,7 @@ namespace KeeLocker
 
 		}
 
-		public static bool TryQueryAuthGuids(string DriveMountPoint)
+		public static bool TryQueryAuthGuids(string DriveMountPoint, out Guid[] guids)
 		{
 			uint N = 0;
 			HRESULT HResult = 0;
@@ -319,16 +329,31 @@ namespace KeeLocker
 			HResult = FveOpenVolume(DriveMountPoint, 0, ref HVolume);
 			if (HResult != 0)
 			{
+				guids = null;
 				return false;
 			}
 
+			List<Guid> result = new List<Guid>();
 
+			HResult = FveGetAuthMethodGuids(HVolume, null, 0, ref N);
+			if (!Succeeded(HResult) || N <= 0)
+			{
+				guids = null;
+				return false;
+			}
 
-			HResult = FveGetAuthMethodGuidsQuery(HVolume, IntPtr.Zero, 0, ref N);
+			var tmp = new byte[N * 16];
+			HResult = FveGetAuthMethodGuids(HVolume, tmp, N, ref N);
+			for (uint i = 0; i < N; i++)
+			{
+				byte[] g = new byte[16];
+				Array.Copy(tmp, i * 16, g, 0, 16);
+				result.Add(new Guid(g));
+			}
 
-
-			// FveCloseVolume(HVolume);
-			return false;
+			HResult = FveCloseVolume(HVolume, IntPtr.Zero, 0, 0);
+			guids = result.ToArray();
+			return true;
 		}
 
 		internal enum NTSTATUS

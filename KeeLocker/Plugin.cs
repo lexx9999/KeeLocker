@@ -1,5 +1,4 @@
 ﻿using KeeLocker.Forms;
-using KeePass.Plugins;
 using KeePassLib;
 using System;
 using System.Collections.Generic;
