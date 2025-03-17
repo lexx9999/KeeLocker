@@ -1,4 +1,5 @@
 ﻿using KeeLocker.Forms;
+using KeePass.Plugins;
 using KeePassLib;
 using System;
 using System.Collections.Generic;
@@ -257,12 +258,19 @@ namespace KeeLocker
 					 if (-1 == m_host.MainWindow.Text.IndexOf(info))
 					 {
 						 m_host.MainWindow.Text = m_host.MainWindow.Text + " - " + info;
+						 ShowBalloonNotification(info);
 					 }
 				 }
 
 			 });
 		}
 
+		private void ShowBalloonNotification(string info)
+		{
+			m_host.MainWindow.MainNotifyIcon.ShowBalloonTip(
+			  5000, "KeeLocker",
+			  info, ToolTipIcon.Info);
+		}
 
 		private IList<BitLockerItem> mapUnlockItems(IEnumerable<KeePassLib.PwEntry> pwEntries, EUnlockReason UnlockReason)
 		{

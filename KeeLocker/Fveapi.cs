@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Text;
 
+
 namespace KeeLocker
 {
 	public class FveApi
@@ -69,6 +70,11 @@ namespace KeeLocker
 		[DllImport("FVEAPI.dll", SetLastError = true, CharSet = CharSet.Unicode, EntryPoint = "FveCloseVolume")]
 		internal static extern HRESULT FveCloseVolume(IntPtr HVolume, ref FVE_UNLOCK_SETTINGS UnlockSettings, Int32 FlagsMaybe, Int32 PassPhrase);
 
+		[DllImport("FVEAPI.dll", SetLastError = true, CharSet = CharSet.Unicode, EntryPoint = "FveGetAuthMethodGuids")]
+		internal static extern HRESULT FveGetAuthMethodGuids(IntPtr HVolume, ref Guid[] guids, uint maxGuids, ref uint GuidCount);
+		[DllImport("FVEAPI.dll", SetLastError = true, CharSet = CharSet.Unicode, EntryPoint = "FveGetAuthMethodGuids")]
+		internal static extern HRESULT FveGetAuthMethodGuidsQuery(IntPtr HVolume, IntPtr zeroPtr, uint maxGuids, ref uint GuidCount);
+
 		[DllImport("kernel32.dll", SetLastError = true)]
 		internal static extern uint QueryDosDevice(string lpDeviceName, [Out] StringBuilder lpTargetPath, uint ucchMax);
 
@@ -89,6 +95,7 @@ namespace KeeLocker
 		[DllImport("kernel32.dll", EntryPoint = "GetVolumePathNamesForVolumeName", SetLastError = true)]
 		[return: MarshalAs(UnmanagedType.Bool)]
 		private static extern bool GetVolumePathNamesForVolumeName(string lpszVolumeName, [Out] char[] lpszVolumePathNames, uint cchBufferLength, ref UInt32 lpcchReturnLength);
+
 
 
 		internal static bool GetVolumePathNamesForVolumeName(string lpszVolumeName, out List<string> volumePaths)
@@ -191,6 +198,7 @@ namespace KeeLocker
 			DriveGUID = DriveGUIDWriter.ToString();
 			return true;
 		}
+
 
 		public static Result UnlockVolume(string DriveMountPoint, string DriveGUID, string PassPhrase, bool IsRecoveryKey)
 		{
@@ -300,6 +308,27 @@ namespace KeeLocker
 
 			return R;
 
+		}
+
+		public static bool TryQueryAuthGuids(string DriveMountPoint)
+		{
+			uint N = 0;
+			HRESULT HResult = 0;
+
+			IntPtr HVolume = IntPtr.Zero;
+			HResult = FveOpenVolume(DriveMountPoint, 0, ref HVolume);
+			if (HResult != 0)
+			{
+				return false;
+			}
+
+
+
+			HResult = FveGetAuthMethodGuidsQuery(HVolume, IntPtr.Zero, 0, ref N);
+
+
+			// FveCloseVolume(HVolume);
+			return false;
 		}
 
 		internal enum NTSTATUS
