@@ -1,3 +1,9 @@
+# Info - Important
+
+This a fork of the original KeeLocker plugin (Gugli/KeeLocker)[https://github.com/Gugli/KeeLocker].
+It has updates disabled, and changed author to make it distinguishable.
+
+
 # KeeLocker
 KeePass2 plugin to open BitLocker volumes when you open your KeePass database.
 

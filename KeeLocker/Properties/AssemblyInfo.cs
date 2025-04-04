@@ -8,7 +8,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTitle("KeeLocker")]
 [assembly: AssemblyDescription("KeePass2 plugin to open BitLocker volumes")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("Gugli")]
+[assembly: AssemblyCompany("lexx9999/Gugli")]
 [assembly: AssemblyProduct("KeePass Plugin")]
 [assembly: AssemblyCopyright("Copyright ©  2025")]
 [assembly: AssemblyTrademark("")]
@@ -32,6 +32,6 @@ using System.Runtime.InteropServices;
 // You can specify all the values or you can default the Build and Revision Numbers
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion("1.7.0.0")]
-[assembly: AssemblyFileVersion("1.7.0.0")]
+[assembly: AssemblyVersion("1.7.0.1")]
+[assembly: AssemblyFileVersion("1.7.0.1")]
 

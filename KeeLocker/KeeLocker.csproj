@@ -92,7 +92,7 @@
   <PropertyGroup>
     <PostBuildEvent>set KeePass=$(SolutionDir)\.keepassdev\
 set KeePassPlugins=%25KeePass%25plugins\
-
+del /q "%25KeePassPlugins%25\$(ProjectName).*"
 copy "$(ProjectName).dll" "%25KeePassPlugins%25\$(ProjectName).dll"
 copy "$(ProjectName).pdb" "%25KeePassPlugins%25\$(ProjectName).pdb"
 </PostBuildEvent>
