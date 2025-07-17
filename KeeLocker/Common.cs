@@ -1,6 +1,8 @@
-﻿using KeePassLib.Security;
+﻿using KeePassLib.Native;
+using KeePassLib.Security;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -69,29 +71,29 @@ namespace KeeLocker
 			var VolumeInfos = KeeLocker.Forms.KeeLockerEntryTab.EnumVolumeInfo();
 
 
-			bool success = true;
+			long tried = 0, succeeded = 0;
 			foreach (BitLockerItem item in bitLockerItems)
 			{
 				if (!item.MaybeThisSystem(VolumeInfos))
 					continue;
 				try
 				{
+					tried++;
 					FveApi.Result result = item.Unlock();
 					if (result != FveApi.Result.Ok)
-						success = false;
+						succeeded++;
 
 				}
 				catch (Exception Ex)
 				{
 					string Messages = Ex.ToString();
-					success = false;
 				}
 			}
-			if (target != null && target.InvokeRequired) target.Invoke(new UnlockResultDelegate(unlockResult), new object[] { success });
-			else if (unlockResult != null) unlockResult(success);
+			if (target != null && target.InvokeRequired) target.Invoke(new UnlockResultDelegate(unlockResult), new object[] { succeeded, tried });
+			else if (unlockResult != null) unlockResult(succeeded, tried);
 		}
 
-		public delegate void UnlockResultDelegate(bool Success);
+		public delegate void UnlockResultDelegate(long SucceededCount, long AttemptedCount);
 		internal static void UnlockBitLocker(IEnumerable<BitLockerItem> bitLockerItems, EUnlockReason UnlockReason, System.Windows.Forms.Control target = null, UnlockResultDelegate unlockResult = null)
 		{
 			Thread thread = new Thread(() => TryUnlockVolume_Thread(bitLockerItems, UnlockReason, target, unlockResult));
@@ -272,4 +274,5 @@ namespace KeeLocker
 			return FveApi.UnlockVolume(driveMountPoint, driveGUID, Password.ReadString(), IsRecoveryKey);
 		}
 	}
+
 }

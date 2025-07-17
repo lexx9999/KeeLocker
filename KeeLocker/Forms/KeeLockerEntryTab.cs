@@ -444,10 +444,10 @@ namespace KeeLocker.Forms
 				  Password,
 		  Common.GetBoolSetting(IsRecoveryKey, Common.DefaultIsRecoveryKey));
 
-			Common.UnlockBitLocker(new List<BitLockerItem> { item }, EUnlockReason.UserRequest, this, (bool success) =>
+			Common.UnlockBitLocker(new List<BitLockerItem> { item }, EUnlockReason.UserRequest, this, (long SucceededCount, long AttemptedCount) =>
 			{
 				this.btn_Unlock.Enabled = true;
-				if (success) SetStatus("Successfully unlocked");
+				if (AttemptedCount>0) SetStatus("Successfully unlocked");
 				else SetStatus("Failed to unlock!", true);
 			});
 		}
@@ -514,7 +514,7 @@ namespace KeeLocker.Forms
 
 		private void btn_Clear_Click(object sender, EventArgs e)
 		{
-			if (DialogResult.Yes != MessageBox.Show(btn_Clear, "Reset all KeeLocker entry setting", "Clear settings", MessageBoxButtons.YesNo))
+			if (DialogResult.Yes != MessageBox.Show(btn_Clear, "Reset all "+ KeeLocker.Globals.APP_NAME + " entry setting", "Clear settings", MessageBoxButtons.YesNo))
 				return;
 			m_DriveIdType = Common.DriveIdTypeDefault;
 
@@ -524,6 +524,11 @@ namespace KeeLocker.Forms
 			m_UnlockOnOpening = Common.DefaultUnlockOnOpening;
 			m_IsRecoveryKey = Common.DefaultIsRecoveryKey;
 			UpdateUi();
+		}
+
+		private void icon_Click(object sender, EventArgs e)
+		{
+			m_plugin.OpenHomepage();
 		}
 	}
 }

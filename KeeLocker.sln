@@ -1,9 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.13.35806.99 d17.13
+VisualStudioVersion = 17.13.35806.99
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KeeLocker", "KeeLocker\KeeLocker.csproj", "{5C054879-7FA8-4D49-A111-A77D55F2F29A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PoC_ReadBitLockerWMI", "ReadBitLockerWMI\PoC_ReadBitLockerWMI.csproj", "{FCD3C6D6-CE8F-4F97-A237-B3DE37E1D262}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KeePassVersionTool", "KeePassVersionTool\KeePassVersionTool.csproj", "{7BB1343D-CBDE-4AEF-95CF-0FF55463B7F5}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +19,14 @@ Global
 		{5C054879-7FA8-4D49-A111-A77D55F2F29A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5C054879-7FA8-4D49-A111-A77D55F2F29A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5C054879-7FA8-4D49-A111-A77D55F2F29A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FCD3C6D6-CE8F-4F97-A237-B3DE37E1D262}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FCD3C6D6-CE8F-4F97-A237-B3DE37E1D262}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FCD3C6D6-CE8F-4F97-A237-B3DE37E1D262}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FCD3C6D6-CE8F-4F97-A237-B3DE37E1D262}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7BB1343D-CBDE-4AEF-95CF-0FF55463B7F5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7BB1343D-CBDE-4AEF-95CF-0FF55463B7F5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7BB1343D-CBDE-4AEF-95CF-0FF55463B7F5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7BB1343D-CBDE-4AEF-95CF-0FF55463B7F5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

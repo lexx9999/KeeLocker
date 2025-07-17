@@ -1,10 +1,10 @@
 *.user
 *.userprefs
 *.suo
-/.vs
+/.vs/
 /.keepassdev/
-/KeeLocker/bin
-/KeeLocker/obj
+/*/bin/
+/*/obj/
 /KeeLocker_private_signing_key.p8
 /Database.kdbx
 /KeeLocker.plgx
@@ -12,3 +12,6 @@
 /__pycache__/
 /.venv/
 /.idea
+*.zip
+*.plgx
+

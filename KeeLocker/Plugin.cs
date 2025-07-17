@@ -2,19 +2,22 @@
 using KeePassLib;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
+using System.Security.Policy;
+using System.Security.Principal;
 using System.Windows.Forms;
 
 namespace KeeLocker
 {
 	public partial class KeeLockerExt : KeePass.Plugins.Plugin
 	{
-		public const string StringName_DriveMountPoint = "KeeLockerMountPoint";
-		public const string StringName_DriveGUID = "KeeLockerGUID";
-		public const string StringName_DriveIdType = "KeeLockerType";
-		public const string StringName_UnlockOnOpening = "KeeLockerOnOpening";
-		public const string StringName_UnlockOnConnection = "KeeLockerOnConnection";
-		public const string StringName_IsRecoveryKey = "KeeLockerIsRecoveryKey";
+		public const string StringName_DriveMountPoint = KeeLocker.Globals.CONFIG_PREFIX + "MountPoint";
+		public const string StringName_DriveGUID = KeeLocker.Globals.CONFIG_PREFIX + "GUID";
+		public const string StringName_DriveIdType = KeeLocker.Globals.CONFIG_PREFIX + "Type";
+		public const string StringName_UnlockOnOpening = KeeLocker.Globals.CONFIG_PREFIX + "OnOpening";
+		public const string StringName_UnlockOnConnection = KeeLocker.Globals.CONFIG_PREFIX + "OnConnection";
+		public const string StringName_IsRecoveryKey = KeeLocker.Globals.CONFIG_PREFIX + "IsRecoveryKey";
 
 		public const string StringName_Password = "Password";
 		internal KeePass.Plugins.IPluginHost m_host;
@@ -26,7 +29,7 @@ namespace KeeLocker
 		{
 			get
 			{
-				return null; // "https://raw.github.com/Gugli/KeeLocker/main/VersionInfo.txt";
+				return KeeLocker.Globals.UPDATE_URL;
 			}
 		}
 
@@ -35,7 +38,7 @@ namespace KeeLocker
 			get
 			{
 				if (m_Image == null)
-					m_Image = new System.Drawing.Bitmap(new System.IO.MemoryStream(Properties.Resources.KeeLocker));
+					m_Image = new System.Drawing.Bitmap(new System.IO.MemoryStream(Properties.Resources.AppIconBitmap));
 				return m_Image;
 			}
 		}
@@ -47,7 +50,8 @@ namespace KeeLocker
 			m_host = host;
 
 			// Signed update checks
-			// KeePass.Util.UpdateCheckEx.SetFileSigKey(UpdateUrl, "<RSAKeyValue><Modulus>0N6jerZiraXQTGZ2kqbQHCOs1pjyFRmHwG6zVQwWQ5M0YONrT5nEJGBCOJ8gliJ+/ONerm8JfrB9eycsvq6cYNGC9WvGTVt81KDhnOlCSPdHkB3qtPU5Vin4UIFNjCmb0/Bnz7hyoVjACqNQUSeIWFSTPtNw2/H7EK+YZpGbdD540QxdRzZUWi50AxS1kCYUzvj1zYjuXBHw7YMP/GFQIuFBJrZUv1nQwVG1+j4u6aWe8wP5RXzm0LpdLtc9JeoVfP1DBujuugKxpOXXDzB+YPI5RIIAOEc3qd4BNZkLOU3JEdGu/MCWL7GgHQOlGjR+jWpKGGkUWFplkCA7YRtKAlRQRQY3Id9wKjinhTyhhZ7r9qkHK8m2dCVaL8F2dXj8KTSZZWIZHV56a6Kou2Kw0Vq9ra6Wt6uZH1lLX3h05ygDe3Gm5rxax150ScjQHBhHxTo03xzaif5AP1zW0eCeCDfH37dPjZBUQb/zEy0pqbKATwMAFdMLWKCS5hy+a5L5xhd+WIf0OW6AgapA4O/xFABucSFVh9Ugpzvy9j5Gb4+9+aygGlnktprZDBAI5t9QEZz8Vkjxv+nKplPPH37f01K7mIzSjsxnGmcBM4CFVPjfG0i9eAa+4pVqFgXaW3TNQjWON8sMrslCqaFB+0s79MuJbps2awevB+hyssCOacE=</Modulus><Exponent>AQAB</Exponent></RSAKeyValue>");
+			if (UpdateUrl != null && KeeLocker.Globals.FILE_SIGN_KEY != null)
+				KeePass.Util.UpdateCheckEx.SetFileSigKey(UpdateUrl, KeeLocker.Globals.FILE_SIGN_KEY);
 
 			// register FileOpened event : needed to open locked storages
 			m_host.MainWindow.FileOpened += OnKPDBOpen;
@@ -57,7 +61,22 @@ namespace KeeLocker
 
 			m_Subscription = FveApi.StateChangeNotification_Subscribe(OnDriveConnected);
 
-			// host.CustomConfig.SetString("KeeLockeer_Hello", "Welcome");
+			//bool runScanAdmin = false;
+			//foreach (KeyValuePair<string, string> kv in host.CommandLineArgs.Parameters)
+			//{
+			
+			// if (kv.Key.Equals(KeeLocker.Globals.APP_NAME+"Scan", StringComparison.InvariantCultureIgnoreCase))
+			//	{
+			//		runScanAdmin = true;
+			//		break;
+			//	}
+			//}
+			//if (runScanAdmin)
+			//{
+
+			//}
+
+			// host.CustomConfig.SetString("KeeLocker_Hello", "Welcome");
 			return true;
 		}
 
@@ -72,51 +91,120 @@ namespace KeeLocker
 			m_host.MainWindow.FileOpened -= OnKPDBOpen;
 		}
 
+
+
+        private static bool IsAdministrator()
+		{
+			WindowsIdentity identity = WindowsIdentity.GetCurrent();
+			WindowsPrincipal principal = new WindowsPrincipal(identity);
+			return principal.IsInRole(WindowsBuiltInRole.Administrator);
+		}
+
 		public override System.Windows.Forms.ToolStripMenuItem GetMenuItem(KeePass.Plugins.PluginMenuType t)
 		{
-			if (t == KeePass.Plugins.PluginMenuType.Main)
+			switch (t)
 			{
-				System.Windows.Forms.ToolStripMenuItem UnlockThisDB = new System.Windows.Forms.ToolStripMenuItem();
-				UnlockThisDB.Text = "KeeLocker unlock volumes in this DB";
-				UnlockThisDB.Image = SmallIcon;
-				UnlockThisDB.Click += this.UnlockThisDB;
-				UnlockThisDB.Paint += delegate (object sender, System.Windows.Forms.PaintEventArgs e)
-				{
-					bool DBIsOpen = ((m_host.MainWindow.ActiveDatabase != null) && m_host.MainWindow.ActiveDatabase.IsOpen);
-					UnlockThisDB.Enabled = DBIsOpen;
-				};
-				return UnlockThisDB;
+				case KeePass.Plugins.PluginMenuType.Main:
+					return createAppMenu(createUnlockThisDBMenuItem(), (IsAdministrator() && Debugger.IsAttached) ?  createSearchVolumesMenuItem() : null, createOpenHomeMenuItem());
+				case KeePass.Plugins.PluginMenuType.Group:
+					return createAppMenu(createUnlockGroupMenuItem());
+				case KeePass.Plugins.PluginMenuType.Entry:
+					return createAppMenu(createUnlockEntryMenuItem());
+				default:
+					return null;
 			}
-			else if (t == KeePass.Plugins.PluginMenuType.Entry)
-			{
-				System.Windows.Forms.ToolStripMenuItem UnlockEntry = new System.Windows.Forms.ToolStripMenuItem();
-				UnlockEntry.Click += this.UnlockEntries;
-				UnlockEntry.Image = SmallIcon;
-				UnlockEntry.Paint += delegate (object sender, System.Windows.Forms.PaintEventArgs e)
-				{
-					KeePassLib.PwEntry[] Entries = m_host.MainWindow.GetSelectedEntries();
-					int SelectedCount = Entries == null ? 0 : Entries.Length;
-					UnlockEntry.Enabled = SelectedCount > 0;
-					UnlockEntry.Text = SelectedCount > 1 ? "KeeLocker unlock volumes" : "KeeLocker unlock volume";
-				};
-				return UnlockEntry;
-			}
-			else if (t == KeePass.Plugins.PluginMenuType.Group)
-			{
-				System.Windows.Forms.ToolStripMenuItem UnlockGroup = new System.Windows.Forms.ToolStripMenuItem();
-				UnlockGroup.Text = "KeeLocker unlock volumes in this group";
-				UnlockGroup.Image = SmallIcon;
-				UnlockGroup.Click += this.UnlockGroup;
-				UnlockGroup.Paint += delegate (object sender, System.Windows.Forms.PaintEventArgs e)
-				{
-					UnlockGroup.Enabled = m_host.MainWindow.GetSelectedGroup() != null;
-				};
-				return UnlockGroup;
-			}
-			else
-			{
+		}
+
+		private ToolStripMenuItem createAppMenu(params ToolStripMenuItem[] items)
+		{
+			if (items == null || items.Length == 0)
 				return null;
+
+			System.Windows.Forms.ToolStripMenuItem AppSubMenu = new System.Windows.Forms.ToolStripMenuItem();
+			AppSubMenu.Text = KeeLocker.Globals.APP_NAME;
+			AppSubMenu.Image = SmallIcon;
+			foreach (ToolStripMenuItem item in items) if(item!=null)
+			{
+				AppSubMenu.DropDownItems.Add(item);
+				if (item.Image == SmallIcon)
+					item.Image = null;
+				string t = item.Text;
+				if (t.StartsWith(KeeLocker.Globals.APP_NAME + " "))
+				{
+					t = t.Substring(KeeLocker.Globals.APP_NAME.Length + 1);
+					t = t.Substring(0, 1).ToUpper() + t.Substring(1);
+					item.Text = t;
+				}
+				
 			}
+			return AppSubMenu;
+		}
+
+
+		private ToolStripMenuItem createUnlockGroupMenuItem()
+		{
+			System.Windows.Forms.ToolStripMenuItem UnlockGroup = new System.Windows.Forms.ToolStripMenuItem();
+			UnlockGroup.Text = "Unlock volumes in this group";
+			UnlockGroup.Click += this.UnlockGroup;
+			UnlockGroup.Paint += delegate (object sender, System.Windows.Forms.PaintEventArgs e)
+			{
+				UnlockGroup.Enabled = m_host.MainWindow.GetSelectedGroup() != null;
+			};
+			return UnlockGroup;
+		}
+		private ToolStripMenuItem createOpenHomeMenuItem()
+		{
+			System.Windows.Forms.ToolStripMenuItem OpenHomeUrl = new System.Windows.Forms.ToolStripMenuItem();
+			OpenHomeUrl.Text = "Open "+Globals.APP_NAME+" Homepage";
+			OpenHomeUrl.Click += delegate (object sender, EventArgs e)
+			{
+				OpenHomepage();
+			};
+			return OpenHomeUrl;
+		}
+
+		public void OpenHomepage()
+		{
+			Process.Start(new ProcessStartInfo { FileName = Globals.HOME_URL, UseShellExecute = true });
+		}
+
+		private ToolStripMenuItem createSearchVolumesMenuItem()
+		{
+			System.Windows.Forms.ToolStripMenuItem ScanConnected = new System.Windows.Forms.ToolStripMenuItem();
+			ScanConnected.Text = "Search volumes...";
+			ScanConnected.Click += this.ScanConnectedVolumes;
+			ScanConnected.Paint += delegate (object sender, System.Windows.Forms.PaintEventArgs e)
+			{
+				ScanConnected.Enabled = m_host.MainWindow.GetSelectedGroup() != null;
+			};
+			return ScanConnected;
+		}
+
+		private ToolStripMenuItem createUnlockEntryMenuItem()
+		{
+			System.Windows.Forms.ToolStripMenuItem UnlockEntry = new System.Windows.Forms.ToolStripMenuItem();
+			UnlockEntry.Click += this.UnlockEntries;
+			UnlockEntry.Paint += delegate (object sender, System.Windows.Forms.PaintEventArgs e)
+			{
+				KeePassLib.PwEntry[] Entries = m_host.MainWindow.GetSelectedEntries();
+				int SelectedCount = Entries == null ? 0 : Entries.Length;
+				UnlockEntry.Enabled = SelectedCount > 0;
+				UnlockEntry.Text = SelectedCount > 1 ? "Unlock volumes" : "Unlock volume";
+			};
+			return UnlockEntry;
+		}
+
+		private ToolStripMenuItem createUnlockThisDBMenuItem()
+		{
+			System.Windows.Forms.ToolStripMenuItem UnlockThisDB = new System.Windows.Forms.ToolStripMenuItem();
+			UnlockThisDB.Text = "Unlock volumes in this DB";
+			UnlockThisDB.Click += this.UnlockThisDB;
+			UnlockThisDB.Paint += delegate (object sender, System.Windows.Forms.PaintEventArgs e)
+			{
+				bool DBIsOpen = ((m_host.MainWindow.ActiveDatabase != null) && m_host.MainWindow.ActiveDatabase.IsOpen);
+				UnlockThisDB.Enabled = DBIsOpen;
+			};
+			return UnlockThisDB;
 		}
 
 		private void OnWindowAdded(object sender, KeePass.UI.GwmWindowEventArgs e)
@@ -140,7 +228,7 @@ namespace KeeLocker
 
 			return Controls[0] as Type;
 		}
-		const string KeeLockerTabName = "KeeLockerTab";
+		const string KeeLockerTabName = KeeLocker.Globals.APP_NAME + "Tab";
 
 		void OnEntryFormShown(object sender, EventArgs e)
 		{
@@ -161,7 +249,7 @@ namespace KeeLocker
 
 			KeeLocker.Forms.KeeLockerEntryTab KeeLockerEntryTab = new KeeLocker.Forms.KeeLockerEntryTab(m_host, this, Entry, strings, Form);
 
-			System.Windows.Forms.TabPage KeeLockerEntryTabContainer = new System.Windows.Forms.TabPage("KeeLocker");
+			System.Windows.Forms.TabPage KeeLockerEntryTabContainer = new System.Windows.Forms.TabPage(KeeLocker.Globals.APP_NAME);
 			KeeLockerEntryTabContainer.Name = KeeLockerTabName;
 			KeeLockerEntryTabContainer.Tag = KeeLockerEntryTab;
 			KeeLockerEntryTabContainer.Controls.Add(KeeLockerEntryTab);
@@ -209,6 +297,12 @@ namespace KeeLocker
 			}
 		}
 
+		private void ScanConnectedVolumes(object sender, EventArgs e)
+		{
+			KeeLockerScanResults scanResults = new KeeLockerScanResults();
+			KeePass.UI.UIUtil.ShowDialogAndDestroy(scanResults);
+		}
+
 		private void UnlockThisDB(object sender, EventArgs e)
 		{
 			UnlockDatabase(m_host.MainWindow.ActiveDatabase, EUnlockReason.DatabaseOpening, sender as ToolStripMenuItem);
@@ -228,7 +322,7 @@ namespace KeeLocker
 				return;
 			System.Windows.Forms.ToolStripMenuItem UnlockEntry = sender as System.Windows.Forms.ToolStripMenuItem;
 			if (UnlockEntry != null) UnlockEntry.Enabled = false;
-			Common.UnlockBitLocker(unlockset, EUnlockReason.UserRequest, m_host.MainWindow, (bool success) =>
+			Common.UnlockBitLocker(unlockset, EUnlockReason.UserRequest, m_host.MainWindow, (long SucceededCount, long AttemptedCount) =>
 		  {
 			  if (UnlockEntry != null) UnlockEntry.Enabled = true;
 		  });
@@ -247,27 +341,28 @@ namespace KeeLocker
 			if (unlockset.Count == 0)
 				return;
 			if (sender != null) sender.Enabled = false;
-			Common.UnlockBitLocker(unlockset, UnlockReason, m_host.MainWindow, (bool success) =>
+			Common.UnlockBitLocker(unlockset, UnlockReason, m_host.MainWindow, (long SucceededCount, long AttemptedCount) =>
 			 {
 				 if (sender != null) sender.Enabled = true;
-
-				 if (UnlockReason == EUnlockReason.DatabaseOpening || UnlockReason == EUnlockReason.DriveConnected)
+				 if (AttemptedCount > 0)
 				 {
-					 string info = "KeeLogger unlocked volumes";
-					 if (-1 == m_host.MainWindow.Text.IndexOf(info))
+					 if (UnlockReason == EUnlockReason.DatabaseOpening || UnlockReason == EUnlockReason.DriveConnected)
 					 {
-						 m_host.MainWindow.Text = m_host.MainWindow.Text + " - " + info;
-						 ShowBalloonNotification(info);
+						 string info = KeeLocker.Globals.APP_NAME + " unlocked volumes";
+						 if (-1 == m_host.MainWindow.Text.IndexOf(info))
+						 {
+							 m_host.MainWindow.Text = m_host.MainWindow.Text + " - " + info;
+							 ShowBalloonNotification(info);
+						 }
 					 }
 				 }
-
 			 });
 		}
 
 		private void ShowBalloonNotification(string info)
 		{
 			m_host.MainWindow.MainNotifyIcon.ShowBalloonTip(
-			  5000, "KeeLocker",
+			  5000, KeeLocker.Globals.APP_NAME,
 			  info, ToolTipIcon.Info);
 		}
 

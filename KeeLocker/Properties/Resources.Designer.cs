@@ -63,9 +63,9 @@ namespace KeeLocker.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Byte[].
         /// </summary>
-        internal static byte[] KeeLocker {
+        internal static byte[] AppIconBitmap {
             get {
-                object obj = ResourceManager.GetObject("KeeLocker", resourceCulture);
+                object obj = ResourceManager.GetObject("AppIconBitmap", resourceCulture);
                 return ((byte[])(obj));
             }
         }

@@ -226,6 +226,7 @@ namespace KeeLocker.Forms
       this.icon.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
       this.icon.TabIndex = 110;
       this.icon.TabStop = false;
+      this.icon.Click += new System.EventHandler(this.icon_Click);
       // 
       // chk_IsRecoveryKey
       // 
