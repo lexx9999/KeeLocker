@@ -61,27 +61,29 @@ namespace TestBitLockerWMI2
     static void Main(string[] args)
     {
       string base64Key = GetArgument(args, "/password");
-      if (string.IsNullOrEmpty(base64Key))
+      byte[] key = null;
+      //if (string.IsNullOrEmpty(base64Key))
+      //{
+      //  Console.WriteLine("{\"error\":\"Missing /password parameter\"}");
+      //  return;
+      //}
+      if (!string.IsNullOrEmpty(base64Key))
       {
-        Console.WriteLine("{\"error\":\"Missing /password parameter\"}");
-        return;
-      }
+        try
+        {
+          key = Convert.FromBase64String(base64Key);
+        }
+        catch (Exception x)
+        {
+          Console.WriteLine("{\"error\":\"Invalid base64 password\"}");
+          return;
+        }
 
-      byte[] key;
-      try
-      {
-        key = Convert.FromBase64String(base64Key);
-      }
-      catch (Exception x)
-      {
-        Console.WriteLine("{\"error\":\"Invalid base64 password\"}");
-        return;
-      }
-
-      if (key.Length != 16 && key.Length != 24 && key.Length != 32)
-      {
-        Console.WriteLine("{\"error\":\"Password must be 16, 24, or 32 bytes after base64 decoding\"}");
-        return;
+        if (key.Length != 16 && key.Length != 24 && key.Length != 32)
+        {
+          Console.WriteLine("{\"error\":\"Password must be 16, 24, or 32 bytes after base64 decoding\"}");
+          return;
+        }
       }
 
       List<BitLockerVolumeInfo> volumes = GetBitLockerVolumes();
@@ -90,16 +92,20 @@ namespace TestBitLockerWMI2
       kld.Version = "KeeLocker-Data-V1";
       kld.Time = DateTime.UtcNow.ToString("o");
 
-
-
       XmlSerializer serializer = new XmlSerializer(typeof(KeeLockerData));
       StringWriter writer = new StringWriter();
       serializer.Serialize(writer, kld);
-      string encrypted = EncryptString(writer.ToString(), key);
-      Console.WriteLine(encrypted);
-      Console.WriteLine(DecryptString(encrypted, key));
-      System.Windows.Forms.Clipboard.SetText(encrypted);
-      System.Windows.Forms.Clipboard.SetText(writer.ToString());
+      if (key != null)
+      {
+        string encrypted = EncryptString(writer.ToString(), key);
+        Console.WriteLine(encrypted);
+        Console.WriteLine(DecryptString(encrypted, key));
+        System.Windows.Forms.Clipboard.SetText(encrypted);
+      }
+      else
+      {
+        System.Windows.Forms.Clipboard.SetText(writer.ToString());
+      }
     }
 
     static string GetArgument(string[] args, string name)
@@ -186,22 +192,32 @@ namespace TestBitLockerWMI2
           info.ConversionStatus = GetRawStatus(volume, "GetConversionStatus", "ConversionStatus");
 
           info.KeyProtectors = new List<KeyProtectorInfo>();
+          const uint S_OK = 0;
 
           try
           {
             string[] ids;
 
-            uint kk = GetKeyProtectors(volume, 0, out ids);
+            uint hr = GetKeyProtectors(volume, 0, out ids);
+            if (hr != S_OK) ids = new string[0];
+
             foreach (string protectorId in ids)
             {
               uint KeyProtectorType;
               string NumericalPassword = null;
-              uint kj = GetKeyProtectorType(volume, protectorId, out KeyProtectorType);
+              hr = GetKeyProtectorType(volume, protectorId, out KeyProtectorType);
+              if (hr != S_OK)
+              {
+                KeyProtectorType = ~0u;
+              }
 
               if (KeyProtectorType == 3) // recoverykey
               {
-                uint kl = GetKeyProtectorNumericalPassword(volume, protectorId, out NumericalPassword);
-
+                hr = GetKeyProtectorNumericalPassword(volume, protectorId, out NumericalPassword);
+                if (hr != S_OK)
+                {
+                  NumericalPassword = null;
+                }
               }
 
 
@@ -255,7 +271,7 @@ namespace TestBitLockerWMI2
       inParams = volume.GetMethodParameters("GetKeyProtectorNumericalPassword");
       inParams["VolumeKeyProtectorID"] = ((string)(VolumeKeyProtectorID));
       System.Management.ManagementBaseObject outParams = volume.InvokeMethod("GetKeyProtectorNumericalPassword", inParams, null);
-      NumericalPassword = (string)outParams.Properties["NumericalPassword"].Value;
+      NumericalPassword = System.Convert.ToString(outParams.Properties["NumericalPassword"].Value);
       return System.Convert.ToUInt32(outParams.Properties["ReturnValue"].Value);
     }
 

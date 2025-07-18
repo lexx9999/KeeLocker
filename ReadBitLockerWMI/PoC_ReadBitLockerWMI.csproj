@@ -51,7 +51,7 @@
     <None Include="App.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-    <PropertyGroup>
+  <PropertyGroup>
     <LangVersion>5</LangVersion>
   </PropertyGroup>
 </Project>
