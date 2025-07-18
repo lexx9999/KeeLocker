@@ -2,10 +2,10 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Windows.Forms;
 using KeePass.Forms;
 using KeePass.Plugins;
+using KeePassLib;
 
 namespace KeeLocker.Forms
 {
@@ -24,9 +24,6 @@ namespace KeeLocker.Forms
 		private bool m_UnlockOnOpening;
 		private bool m_UnlockOnConnection;
 		private bool m_IsRecoveryKey;
-
-		private Regex volumeRx = new Regex(@"^(?:\\{2}\?\\)?(Volume\{[0-9a-z-]+\})\\*", RegexOptions.IgnoreCase); // \\?\Volume{1c794602-2372-11ee-a970-b42e99f6c353}\
-		private Regex driveRx = new Regex(@"^(?:\\{2}\?\\)?([a-z]:)\\*$", RegexOptions.IgnoreCase); // \\?\Volume{1c794602-2372-11ee-a970-b42e99f6c353}\
 
 
 
@@ -358,7 +355,7 @@ namespace KeeLocker.Forms
 		private void btn_Unlock_Click(object sender, EventArgs e)
 		{
 			KeePassLib.Collections.ProtectedStringDictionary Strings = m_entrystrings;
-			KeePassLib.Security.ProtectedString Password = Strings.Get(KeeLockerExt.StringName_Password);
+			KeePassLib.Security.ProtectedString Password = Strings.Get(PwDefs.PasswordField);
 			KeePassLib.Security.ProtectedString IsRecoveryKey = Strings.Get(KeeLockerExt.StringName_IsRecoveryKey);
 			this.btn_Unlock.Enabled = false;
 			SetStatus("Unlocking...");
@@ -499,7 +496,7 @@ namespace KeeLocker.Forms
 				return;
 
 			string text = tx_Custom.Text;
-			var M = volumeRx.Match(text);
+			var M = Common.volumeRx.Match(text);
 			if (M.Success)
 			{
 				m_DriveGUID = @"\\?\"+M.Groups[1]+@"\";
@@ -508,7 +505,7 @@ namespace KeeLocker.Forms
 			}
 			else
 			{
-				M= driveRx.Match(text);
+				M= Common.driveRx.Match(text);
 				if (M.Success)
 				{
 					text = M.Groups[1].Value.ToUpperInvariant() + @"\";

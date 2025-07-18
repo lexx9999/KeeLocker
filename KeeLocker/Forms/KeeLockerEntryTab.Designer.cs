@@ -38,11 +38,11 @@ namespace KeeLocker.Forms
       this.btn_RefreshVolumes = new System.Windows.Forms.Button();
       this.btn_Clear = new System.Windows.Forms.Button();
       this.label1 = new System.Windows.Forms.Label();
+      this.cbx_SystemVolume = new KeeLocker.Forms.RichComboBox();
       this.grp_Unlock = new System.Windows.Forms.GroupBox();
       this.icon = new System.Windows.Forms.PictureBox();
       this.chk_IsRecoveryKey = new System.Windows.Forms.CheckBox();
       this.txt_Info = new System.Windows.Forms.Label();
-      this.cbx_SystemVolume = new KeeLocker.Forms.RichComboBox();
       this.grp_Drive.SuspendLayout();
       this.grp_Unlock.SuspendLayout();
       ((System.ComponentModel.ISupportInitialize)(this.icon)).BeginInit();
@@ -149,6 +149,17 @@ namespace KeeLocker.Forms
       this.label1.TabIndex = 107;
       this.label1.Text = "Select volume:";
       // 
+      // cbx_SystemVolume
+      // 
+      this.cbx_SystemVolume.DrawMode = System.Windows.Forms.DrawMode.OwnerDrawVariable;
+      this.cbx_SystemVolume.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+      this.cbx_SystemVolume.Location = new System.Drawing.Point(22, 97);
+      this.cbx_SystemVolume.Margin = new System.Windows.Forms.Padding(7);
+      this.cbx_SystemVolume.Name = "cbx_SystemVolume";
+      this.cbx_SystemVolume.Size = new System.Drawing.Size(987, 36);
+      this.cbx_SystemVolume.TabIndex = 106;
+      this.cbx_SystemVolume.SelectedIndexChanged += new System.EventHandler(this.cbx_SystemVolume_SelectedIndexChanged);
+      // 
       // grp_Unlock
       // 
       this.grp_Unlock.Controls.Add(this.icon);
@@ -198,17 +209,6 @@ namespace KeeLocker.Forms
       this.txt_Info.Size = new System.Drawing.Size(75, 29);
       this.txt_Info.TabIndex = 108;
       this.txt_Info.Text = "status";
-      // 
-      // cbx_SystemVolume
-      // 
-      this.cbx_SystemVolume.DrawMode = System.Windows.Forms.DrawMode.OwnerDrawVariable;
-      this.cbx_SystemVolume.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-      this.cbx_SystemVolume.Location = new System.Drawing.Point(22, 97);
-      this.cbx_SystemVolume.Margin = new System.Windows.Forms.Padding(7);
-      this.cbx_SystemVolume.Name = "cbx_SystemVolume";
-      this.cbx_SystemVolume.Size = new System.Drawing.Size(987, 36);
-      this.cbx_SystemVolume.TabIndex = 106;
-      this.cbx_SystemVolume.SelectedIndexChanged += new System.EventHandler(this.cbx_SystemVolume_SelectedIndexChanged);
       // 
       // KeeLockerEntryTab
       // 

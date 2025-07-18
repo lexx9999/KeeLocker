@@ -1,11 +1,10 @@
-﻿using KeePassLib.Native;
-using KeePassLib.Security;
+﻿using KeePassLib.Security;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 
 namespace KeeLocker
@@ -17,6 +16,9 @@ namespace KeeLocker
 		public const bool DefaultIsRecoveryKey = false;
 		public const bool DefaultUnlockOnConnection = false;
 		public const bool DefaultUnlockOnOpening = false;
+
+		internal static readonly Regex volumeRx = new Regex(@"^(?:\\{2}\?\\)?(Volume\{[0-9a-z-]+\})\\*", RegexOptions.IgnoreCase); 
+		internal static readonly Regex driveRx = new Regex(@"^(?:\\{2}\?\\)?([a-z]:)\\*$", RegexOptions.IgnoreCase);
 		internal static string FormatSize(long totalSize)
 		{
 			if (totalSize <= 0)
