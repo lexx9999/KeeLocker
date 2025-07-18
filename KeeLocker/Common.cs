@@ -209,8 +209,19 @@ namespace KeeLocker
 				return sb.ToString();
 			}
 		}
-	}
 
+		public string CustomText
+		{
+			get
+			{
+				if (!string.IsNullOrEmpty(Volume))
+					return Volume;
+				if (!string.IsNullOrEmpty(MountPoint))
+					return MountPoint;
+				return string.Empty;
+			}
+		}
+	}
 
 	internal class BitLockerItem
 	{

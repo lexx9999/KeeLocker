@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Windows.Forms;
 using KeePass.Forms;
 using KeePass.Plugins;
@@ -23,6 +24,9 @@ namespace KeeLocker.Forms
 		private bool m_UnlockOnOpening;
 		private bool m_UnlockOnConnection;
 		private bool m_IsRecoveryKey;
+
+		private Regex volumeRx = new Regex(@"^(?:\\{2}\?\\)?(Volume\{[0-9a-z-]+\})\\*", RegexOptions.IgnoreCase); // \\?\Volume{1c794602-2372-11ee-a970-b42e99f6c353}\
+		private Regex driveRx = new Regex(@"^(?:\\{2}\?\\)?([a-z]:)\\*$", RegexOptions.IgnoreCase); // \\?\Volume{1c794602-2372-11ee-a970-b42e99f6c353}\
 
 
 
@@ -149,18 +153,14 @@ namespace KeeLocker.Forms
 		private void SettingsLoad()
 		{
 			this.cbx_SystemVolume.Items.Clear();
-			this.cbx_DriveMountPoint.Items.Clear();
-			this.cbx_DriveGUID.Items.Clear();
 			VolumeInfos = EnumVolumeInfo();
-			this.cbx_SystemVolume.Item_Add(new KeeLocker.Forms.RichComboBox.SItem("(None)", RichComboBox.EItemType.Active, new VolumeInfo
+			this.cbx_SystemVolume.Item_Add(new KeeLocker.Forms.RichComboBox.SItem("(None/Custom)", RichComboBox.EItemType.Active, new VolumeInfo
 			{
 				MountPoint = "",
 				Volume = "",
 				DriveIdType = Common.DriveIdTypeDefault
 			}));
 
-			SortedSet<string> mpd = new SortedSet<string>();
-			SortedSet<string> mpf = new SortedSet<string>();
 			SortedSet<string> vs = new SortedSet<string>();
 			SortedDictionary<string, VolumeInfo> sv = new SortedDictionary<string, VolumeInfo>();
 
@@ -168,13 +168,7 @@ namespace KeeLocker.Forms
 			foreach (VolumeInfo vi in this.VolumeInfos)
 			{
 				sv.Add(vi.DisplayText, vi);
-				if (!string.IsNullOrWhiteSpace(vi.MountPoint))
-				{
-					if (vi.MountPoint.EndsWith(":\\") && vi.MountPoint.Length == 3)
-						mpd.Add(vi.MountPoint);
-					else
-						mpf.Add(vi.MountPoint);
-				}
+
 				if (!string.IsNullOrWhiteSpace(vi.Volume))
 					vs.Add(vi.Volume);
 			}
@@ -182,27 +176,6 @@ namespace KeeLocker.Forms
 			{
 				this.cbx_SystemVolume.Item_Add(new KeeLocker.Forms.RichComboBox.SItem(kv.Key, RichComboBox.EItemType.Active, kv.Value));
 			}
-			this.cbx_DriveGUID.Item_Add(new KeeLocker.Forms.RichComboBox.SItem("Volumes:", RichComboBox.EItemType.Inactive));
-			foreach (string v in vs)
-			{
-				this.cbx_DriveGUID.Item_Add(new KeeLocker.Forms.RichComboBox.SItem(v, RichComboBox.EItemType.Active));
-			}
-
-			this.cbx_DriveMountPoint.Item_Add(new KeeLocker.Forms.RichComboBox.SItem("Can be a drive root like:", RichComboBox.EItemType.Inactive));
-			if (mpd.Count == 0) mpd.Add("D:\\");
-			foreach (string v in mpd)
-			{
-				this.cbx_DriveMountPoint.Item_Add(new KeeLocker.Forms.RichComboBox.SItem(v, RichComboBox.EItemType.Active));
-			}
-			this.cbx_DriveMountPoint.Item_Add(new KeeLocker.Forms.RichComboBox.SItem("Or any valid mountpoint path", RichComboBox.EItemType.Inactive));
-			if (mpf.Count == 0) mpf.Add("C:\\Path\\To\\MountPoint");
-
-			foreach (string v in mpf)
-			{
-				this.cbx_DriveMountPoint.Item_Add(new KeeLocker.Forms.RichComboBox.SItem(v, RichComboBox.EItemType.Active));
-			}
-
-			this.cbx_DriveMountPoint.MaxDropDownItems = this.cbx_DriveMountPoint.Items.Count;
 
 			{
 				KeePassLib.Security.ProtectedString DriveIdType = m_entrystrings.Get(KeeLockerExt.StringName_DriveIdType);
@@ -261,41 +234,8 @@ namespace KeeLocker.Forms
 					Volume = m_DriveGUID,
 					MountPoint = m_DriveMountPoint,
 				};
-				int z = cbx_SystemVolume.Item_Add(new RichComboBox.SItem("(Current) "+vi.DisplayText, RichComboBox.EItemType.Active, vi));
+				int z = cbx_SystemVolume.Item_Add(new RichComboBox.SItem("(Current) " + vi.DisplayText, RichComboBox.EItemType.Active, vi));
 				cbx_SystemVolume.SelectedIndex = z;
-
-			}
-
-
-			switch (m_DriveIdType)
-			{
-				case EDriveIdType.GUID:
-					if (!string.IsNullOrWhiteSpace(m_DriveGUID))
-					{
-
-					}
-					break;
-				case EDriveIdType.MountPoint:
-					if (!string.IsNullOrWhiteSpace(m_DriveMountPoint))
-					{
-
-						foreach (object tmp in cbx_DriveMountPoint.Items)
-						{
-							VolumeInfo vi = (VolumeInfo)cbx_DriveMountPoint.GetDataForItem(tmp);
-							if (vi != null && vi.MountPoint != null && vi.MountPoint.Equals(m_DriveMountPoint, StringComparison.InvariantCultureIgnoreCase))
-							{
-								cbx_DriveMountPoint.SelectedItem = tmp;
-								break;
-							}
-
-
-						}
-					}
-					break;
-
-				default:
-					cbx_SystemVolume.SelectedIndex = 0;
-					break;
 
 			}
 		}
@@ -343,16 +283,6 @@ namespace KeeLocker.Forms
 
 		private void UpdateUi()
 		{
-			cbx_DriveMountPoint.Text = m_DriveMountPoint;
-			cbx_DriveGUID.Text = m_DriveGUID;
-
-			rdo_MountPoint.Checked = m_DriveIdType == EDriveIdType.MountPoint;
-			rdo_DriveGUID.Checked = m_DriveIdType == EDriveIdType.GUID;
-
-			cbx_DriveMountPoint.Enabled = rdo_MountPoint.Checked;
-			btn_DriveGUID.Enabled = rdo_MountPoint.Checked;
-			cbx_DriveGUID.Enabled = rdo_DriveGUID.Checked;
-
 			chk_UnlockOnOpening.Checked = m_UnlockOnOpening;
 			chk_UnlockOnConnection.Checked = m_UnlockOnConnection;
 			chk_IsRecoveryKey.Checked = m_IsRecoveryKey;
@@ -366,25 +296,20 @@ namespace KeeLocker.Forms
 				cbx_SystemVolume.SelectedIndexChanged -= cbx_SystemVolume_SelectedIndexChanged;
 				cbx_SystemVolume.SelectedIndex = 0;
 				cbx_SystemVolume.SelectedIndexChanged += cbx_SystemVolume_SelectedIndexChanged;
+				vi = (VolumeInfo)cbx_SystemVolume.GetDataForItem(cbx_SystemVolume.SelectedItem);
 			}
+			bool bShowCustom = vi == null || vi.DriveIdType == EDriveIdType.MountPoint || string.IsNullOrEmpty(vi.Volume);
+			tx_Custom.Visible = bShowCustom;
+			lbl_Custom.Visible = bShowCustom;
+			tx_Custom.Enabled = false;
+			tx_Custom.Text = (bShowCustom && vi != null) ? vi.CustomText : "";
+			tx_Custom.Enabled = bShowCustom;
 		}
 
 		public void OnSave(object sender, EventArgs e)
 		{
 			if (_selected) // if not selected it was never opened or is already saved because of tab switch
 				SettingsSave();
-		}
-
-		private void cbx_DriveMountPoint_Validated(object sender, EventArgs e)
-		{
-			m_DriveMountPoint = cbx_DriveMountPoint.Text;
-			UpdateUi();
-		}
-
-		private void txt_DriveGUID_Validated(object sender, EventArgs e)
-		{
-			m_DriveGUID = cbx_DriveGUID.Text;
-			UpdateUi();
 		}
 
 		private void rdo_MountPoint_Click(object sender, EventArgs e)
@@ -531,7 +456,7 @@ namespace KeeLocker.Forms
 
 		private void btn_Clear_Click(object sender, EventArgs e)
 		{
-			if (DialogResult.Yes != MessageBox.Show(btn_Clear, "Reset all "+ KeeLocker.Globals.APP_NAME + " entry setting", "Clear settings", MessageBoxButtons.YesNo))
+			if (DialogResult.Yes != MessageBox.Show(btn_Clear, "Reset all " + KeeLocker.Globals.APP_NAME + " entry setting", "Clear settings", MessageBoxButtons.YesNo))
 				return;
 			m_DriveIdType = Common.DriveIdTypeDefault;
 
@@ -546,6 +471,52 @@ namespace KeeLocker.Forms
 		private void icon_Click(object sender, EventArgs e)
 		{
 			m_plugin.OpenHomepage();
+		}
+
+		private void tx_Custom_TextChanged(object sender, EventArgs e)
+		{
+			VolumeInfo vi = (VolumeInfo)cbx_SystemVolume.GetDataForItem(cbx_SystemVolume.SelectedItem);
+
+			if (vi != null && tx_Custom.Enabled)
+			{
+				string text = tx_Custom.Text;
+				string custom = vi.CustomText;
+				if (!text.Equals(custom, StringComparison.InvariantCultureIgnoreCase))
+				{
+					cbx_SystemVolume.SelectedIndexChanged -= cbx_SystemVolume_SelectedIndexChanged;
+					cbx_SystemVolume.SelectedIndex = 0;
+					cbx_SystemVolume.SelectedIndexChanged += cbx_SystemVolume_SelectedIndexChanged;
+				}
+			}
+
+
+
+		}
+
+		private void tx_Custom_Validated(object sender, EventArgs e)
+		{
+			if (!tx_Custom.Visible)
+				return;
+
+			string text = tx_Custom.Text;
+			var M = volumeRx.Match(text);
+			if (M.Success)
+			{
+				m_DriveGUID = @"\\?\"+M.Groups[1]+@"\";
+				m_DriveMountPoint = null;
+				m_DriveIdType = EDriveIdType.GUID;
+			}
+			else
+			{
+				M= driveRx.Match(text);
+				if (M.Success)
+				{
+					text = M.Groups[1].Value.ToUpperInvariant() + @"\";
+				}
+				m_DriveGUID = null;
+				m_DriveMountPoint = text;
+				m_DriveIdType = EDriveIdType.MountPoint;
+			}
 		}
 	}
 }
