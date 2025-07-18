@@ -15,6 +15,8 @@ namespace TestBitLockerWMI2
     public string ID { get; set; }
     [XmlAttribute]
     public uint Type { get; set; }
+
+    public string NumericalPassword { get; set; }
   }
   [Serializable]
   public class BitLockerVolumeInfo
@@ -64,8 +66,6 @@ namespace TestBitLockerWMI2
         Console.WriteLine("{\"error\":\"Missing /password parameter\"}");
         return;
       }
-
-
 
       byte[] key;
       try
@@ -195,12 +195,21 @@ namespace TestBitLockerWMI2
             foreach (string protectorId in ids)
             {
               uint KeyProtectorType;
+              string NumericalPassword = null;
               uint kj = GetKeyProtectorType(volume, protectorId, out KeyProtectorType);
+
+              if (KeyProtectorType == 3) // recoverykey
+              {
+                uint kl = GetKeyProtectorNumericalPassword(volume, protectorId, out NumericalPassword);
+
+              }
+
 
               info.KeyProtectors.Add(new KeyProtectorInfo
               {
                 ID = protectorId,
-                Type = KeyProtectorType
+                Type = KeyProtectorType,
+                NumericalPassword = NumericalPassword
               });
             }
 
@@ -238,6 +247,15 @@ namespace TestBitLockerWMI2
       inParams["VolumeKeyProtectorID"] = ((string)(VolumeKeyProtectorID));
       System.Management.ManagementBaseObject outParams = volume.InvokeMethod("GetKeyProtectorType", inParams, null);
       KeyProtectorType = System.Convert.ToUInt32(outParams.Properties["KeyProtectorType"].Value);
+      return System.Convert.ToUInt32(outParams.Properties["ReturnValue"].Value);
+    }
+    static uint GetKeyProtectorNumericalPassword(ManagementObject volume, string VolumeKeyProtectorID, out string NumericalPassword)
+    {
+      System.Management.ManagementBaseObject inParams = null;
+      inParams = volume.GetMethodParameters("GetKeyProtectorNumericalPassword");
+      inParams["VolumeKeyProtectorID"] = ((string)(VolumeKeyProtectorID));
+      System.Management.ManagementBaseObject outParams = volume.InvokeMethod("GetKeyProtectorNumericalPassword", inParams, null);
+      NumericalPassword = (string)outParams.Properties["NumericalPassword"].Value;
       return System.Convert.ToUInt32(outParams.Properties["ReturnValue"].Value);
     }
 
