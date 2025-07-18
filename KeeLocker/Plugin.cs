@@ -325,6 +325,7 @@ namespace KeeLocker
 			Common.UnlockBitLocker(unlockset, EUnlockReason.UserRequest, m_host.MainWindow, (long SucceededCount, long AttemptedCount) =>
 		  {
 			  if (UnlockEntry != null) UnlockEntry.Enabled = true;
+			  reportUnlockStatus(SucceededCount, AttemptedCount);
 		  });
 		}
 
@@ -342,21 +343,23 @@ namespace KeeLocker
 				return;
 			if (sender != null) sender.Enabled = false;
 			Common.UnlockBitLocker(unlockset, UnlockReason, m_host.MainWindow, (long SucceededCount, long AttemptedCount) =>
-			 {
-				 if (sender != null) sender.Enabled = true;
-				 if (AttemptedCount > 0)
-				 {
-					 if (UnlockReason == EUnlockReason.DatabaseOpening || UnlockReason == EUnlockReason.DriveConnected)
-					 {
-						 string info = KeeLocker.Globals.APP_NAME + " unlocked volumes";
-						 if (-1 == m_host.MainWindow.Text.IndexOf(info))
-						 {
-							 m_host.MainWindow.Text = m_host.MainWindow.Text + " - " + info;
-							 ShowBalloonNotification(info);
-						 }
-					 }
-				 }
-			 });
+			{
+				if (sender != null) sender.Enabled = true;
+				reportUnlockStatus(SucceededCount, AttemptedCount);
+			});
+		}
+
+		private void reportUnlockStatus(long SucceededCount, long AttemptedCount)
+		{
+			if (AttemptedCount > 0)
+			{
+				string info = (SucceededCount < AttemptedCount) ? string.Format("{0} unlocked {1} of {2} volumes", KeeLocker.Globals.APP_NAME, SucceededCount, AttemptedCount) : KeeLocker.Globals.APP_NAME + " unlocked volumes";
+				if (-1 == m_host.MainWindow.Text.IndexOf(info))
+				{
+					m_host.MainWindow.Text = m_host.MainWindow.Text + " - " + info;
+					ShowBalloonNotification(info);
+				}
+			}
 		}
 
 		private void ShowBalloonNotification(string info)

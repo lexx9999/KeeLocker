@@ -447,14 +447,31 @@ namespace KeeLocker.Forms
 			Common.UnlockBitLocker(new List<BitLockerItem> { item }, EUnlockReason.UserRequest, this, (long SucceededCount, long AttemptedCount) =>
 			{
 				this.btn_Unlock.Enabled = true;
-				if (AttemptedCount>0) SetStatus("Successfully unlocked");
+				if (AttemptedCount == 0)
+				{
+					SetStatus("Nothing to unlock!", true);
+					return;
+				}
+
+				if (AttemptedCount == SucceededCount)
+				{
+					SetStatus("Successfully unlocked");
+				}
 				else SetStatus("Failed to unlock!", true);
+
+				if (SucceededCount > 0)
+					RefreshVolumes();
 			});
+		}
+
+		private void RefreshVolumes()
+		{
+			// TODO
 		}
 
 		private void btn_DriveGUID_Click(object sender, EventArgs e)
 		{
-			SetStatus("Detect volume guid...");
+			SetStatus("Detect volume GUID...");
 			string DriveGUID;
 			bool Ok = FveApi.GetDriveGUID(m_DriveMountPoint, out DriveGUID);
 			if (Ok)

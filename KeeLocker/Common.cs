@@ -80,7 +80,7 @@ namespace KeeLocker
 				{
 					tried++;
 					FveApi.Result result = item.Unlock();
-					if (result != FveApi.Result.Ok)
+					if (result == FveApi.Result.Ok)
 						succeeded++;
 
 				}
