@@ -40,11 +40,10 @@ copy "%LocalDir%\%Name%\bin\Release\%Name%.dll" "%ZipDir%\%Name%.dll"
 echo "Plugin: %Name%" > "%ZipDir%\info.txt"
 echo "Homepage: %Homepage%" >> "%ZipDir%\info.txt"
 
-et SevenZip=NUL
+set SevenZip=NUL
 for %%i in ("%ProgramFiles(x86)%" "%ProgramFiles%") do if exist "%%~i\7-Zip\7z.exe" set SevenZip="%%~i\7-Zip\7z.exe"
 
 %SevenZip% a -mx=9 "%LocalDir%\%ZipName%.zip" "%ZipDir%\%Name%.dll" "%ZipDir%\%Name%.plgx" "%ZipDir%\info.txt"
-
 
 "%KeePass%\KeePass.exe" 
 

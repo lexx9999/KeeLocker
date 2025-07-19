@@ -32,16 +32,13 @@ namespace KeeLocker.Forms
       this.chk_UnlockOnOpening = new System.Windows.Forms.CheckBox();
       this.chk_UnlockOnConnection = new System.Windows.Forms.CheckBox();
       this.btn_Unlock = new System.Windows.Forms.Button();
-      this.rdo_MountPoint = new System.Windows.Forms.RadioButton();
-      this.rdo_DriveGUID = new System.Windows.Forms.RadioButton();
       this.grp_Drive = new System.Windows.Forms.GroupBox();
+      this.tx_Custom = new System.Windows.Forms.TextBox();
+      this.lbl_Custom = new System.Windows.Forms.Label();
+      this.btn_RefreshVolumes = new System.Windows.Forms.Button();
       this.btn_Clear = new System.Windows.Forms.Button();
       this.label1 = new System.Windows.Forms.Label();
       this.cbx_SystemVolume = new KeeLocker.Forms.RichComboBox();
-      this.btn_DriveGUID = new System.Windows.Forms.Button();
-      this.lbl_DriveGUID = new System.Windows.Forms.Label();
-      this.cbx_DriveGUID = new KeeLocker.Forms.RichComboBox();
-      this.cbx_DriveMountPoint = new KeeLocker.Forms.RichComboBox();
       this.grp_Unlock = new System.Windows.Forms.GroupBox();
       this.icon = new System.Windows.Forms.PictureBox();
       this.chk_IsRecoveryKey = new System.Windows.Forms.CheckBox();
@@ -86,53 +83,55 @@ namespace KeeLocker.Forms
       this.btn_Unlock.UseVisualStyleBackColor = true;
       this.btn_Unlock.Click += new System.EventHandler(this.btn_Unlock_Click);
       // 
-      // rdo_MountPoint
-      // 
-      this.rdo_MountPoint.AutoSize = true;
-      this.rdo_MountPoint.Location = new System.Drawing.Point(28, 119);
-      this.rdo_MountPoint.Margin = new System.Windows.Forms.Padding(7);
-      this.rdo_MountPoint.Name = "rdo_MountPoint";
-      this.rdo_MountPoint.Size = new System.Drawing.Size(231, 33);
-      this.rdo_MountPoint.TabIndex = 101;
-      this.rdo_MountPoint.Text = "Drive mountpoint:";
-      this.rdo_MountPoint.UseVisualStyleBackColor = true;
-      this.rdo_MountPoint.Click += new System.EventHandler(this.rdo_MountPoint_Click);
-      // 
-      // rdo_DriveGUID
-      // 
-      this.rdo_DriveGUID.AutoSize = true;
-      this.rdo_DriveGUID.Location = new System.Drawing.Point(28, 246);
-      this.rdo_DriveGUID.Margin = new System.Windows.Forms.Padding(7);
-      this.rdo_DriveGUID.Name = "rdo_DriveGUID";
-      this.rdo_DriveGUID.Size = new System.Drawing.Size(170, 33);
-      this.rdo_DriveGUID.TabIndex = 104;
-      this.rdo_DriveGUID.Text = "Drive GUID:";
-      this.rdo_DriveGUID.UseVisualStyleBackColor = true;
-      this.rdo_DriveGUID.Click += new System.EventHandler(this.rdo_DriveGUID_Click);
-      // 
       // grp_Drive
       // 
+      this.grp_Drive.Controls.Add(this.tx_Custom);
+      this.grp_Drive.Controls.Add(this.lbl_Custom);
+      this.grp_Drive.Controls.Add(this.btn_RefreshVolumes);
       this.grp_Drive.Controls.Add(this.btn_Clear);
       this.grp_Drive.Controls.Add(this.label1);
       this.grp_Drive.Controls.Add(this.cbx_SystemVolume);
-      this.grp_Drive.Controls.Add(this.btn_DriveGUID);
-      this.grp_Drive.Controls.Add(this.lbl_DriveGUID);
-      this.grp_Drive.Controls.Add(this.cbx_DriveGUID);
-      this.grp_Drive.Controls.Add(this.rdo_DriveGUID);
-      this.grp_Drive.Controls.Add(this.rdo_MountPoint);
-      this.grp_Drive.Controls.Add(this.cbx_DriveMountPoint);
       this.grp_Drive.Location = new System.Drawing.Point(21, 17);
       this.grp_Drive.Margin = new System.Windows.Forms.Padding(7);
       this.grp_Drive.Name = "grp_Drive";
       this.grp_Drive.Padding = new System.Windows.Forms.Padding(7);
-      this.grp_Drive.Size = new System.Drawing.Size(1026, 406);
+      this.grp_Drive.Size = new System.Drawing.Size(1026, 285);
       this.grp_Drive.TabIndex = 112;
       this.grp_Drive.TabStop = false;
       this.grp_Drive.Text = "Drive info";
       // 
+      // tx_Custom
+      // 
+      this.tx_Custom.Location = new System.Drawing.Point(130, 150);
+      this.tx_Custom.Name = "tx_Custom";
+      this.tx_Custom.Size = new System.Drawing.Size(879, 35);
+      this.tx_Custom.TabIndex = 113;
+      this.tx_Custom.TextChanged += new System.EventHandler(this.tx_Custom_TextChanged);
+      this.tx_Custom.Validated += new System.EventHandler(this.tx_Custom_Validated);
+      // 
+      // lbl_Custom
+      // 
+      this.lbl_Custom.AutoSize = true;
+      this.lbl_Custom.Location = new System.Drawing.Point(23, 153);
+      this.lbl_Custom.Name = "lbl_Custom";
+      this.lbl_Custom.Size = new System.Drawing.Size(101, 29);
+      this.lbl_Custom.TabIndex = 112;
+      this.lbl_Custom.Text = "Custom:";
+      // 
+      // btn_RefreshVolumes
+      // 
+      this.btn_RefreshVolumes.Location = new System.Drawing.Point(748, 42);
+      this.btn_RefreshVolumes.Margin = new System.Windows.Forms.Padding(7);
+      this.btn_RefreshVolumes.Name = "btn_RefreshVolumes";
+      this.btn_RefreshVolumes.Size = new System.Drawing.Size(261, 51);
+      this.btn_RefreshVolumes.TabIndex = 111;
+      this.btn_RefreshVolumes.Text = "Refresh Volumes";
+      this.btn_RefreshVolumes.UseVisualStyleBackColor = true;
+      this.btn_RefreshVolumes.Visible = false;
+      // 
       // btn_Clear
       // 
-      this.btn_Clear.Location = new System.Drawing.Point(750, 330);
+      this.btn_Clear.Location = new System.Drawing.Point(748, 214);
       this.btn_Clear.Margin = new System.Windows.Forms.Padding(7);
       this.btn_Clear.Name = "btn_Clear";
       this.btn_Clear.Size = new System.Drawing.Size(261, 51);
@@ -144,62 +143,22 @@ namespace KeeLocker.Forms
       // label1
       // 
       this.label1.AutoSize = true;
-      this.label1.Location = new System.Drawing.Point(28, 56);
+      this.label1.Location = new System.Drawing.Point(23, 56);
       this.label1.Name = "label1";
-      this.label1.Size = new System.Drawing.Size(87, 29);
+      this.label1.Size = new System.Drawing.Size(171, 29);
       this.label1.TabIndex = 107;
-      this.label1.Text = "Select:";
+      this.label1.Text = "Select volume:";
       // 
       // cbx_SystemVolume
       // 
       this.cbx_SystemVolume.DrawMode = System.Windows.Forms.DrawMode.OwnerDrawVariable;
       this.cbx_SystemVolume.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-      this.cbx_SystemVolume.Location = new System.Drawing.Point(125, 56);
+      this.cbx_SystemVolume.Location = new System.Drawing.Point(22, 97);
       this.cbx_SystemVolume.Margin = new System.Windows.Forms.Padding(7);
       this.cbx_SystemVolume.Name = "cbx_SystemVolume";
-      this.cbx_SystemVolume.Size = new System.Drawing.Size(886, 36);
+      this.cbx_SystemVolume.Size = new System.Drawing.Size(987, 36);
       this.cbx_SystemVolume.TabIndex = 106;
       this.cbx_SystemVolume.SelectedIndexChanged += new System.EventHandler(this.cbx_SystemVolume_SelectedIndexChanged);
-      // 
-      // btn_DriveGUID
-      // 
-      this.btn_DriveGUID.Location = new System.Drawing.Point(301, 169);
-      this.btn_DriveGUID.Margin = new System.Windows.Forms.Padding(7);
-      this.btn_DriveGUID.Name = "btn_DriveGUID";
-      this.btn_DriveGUID.Size = new System.Drawing.Size(509, 56);
-      this.btn_DriveGUID.TabIndex = 103;
-      this.btn_DriveGUID.Text = "Convert mountpoint to GUID";
-      this.btn_DriveGUID.UseVisualStyleBackColor = true;
-      this.btn_DriveGUID.Click += new System.EventHandler(this.btn_DriveGUID_Click);
-      // 
-      // lbl_DriveGUID
-      // 
-      this.lbl_DriveGUID.Location = new System.Drawing.Point(131, 304);
-      this.lbl_DriveGUID.Margin = new System.Windows.Forms.Padding(7, 0, 7, 0);
-      this.lbl_DriveGUID.Name = "lbl_DriveGUID";
-      this.lbl_DriveGUID.Size = new System.Drawing.Size(566, 58);
-      this.lbl_DriveGUID.TabIndex = 104;
-      this.lbl_DriveGUID.Text = "Use a GUID whenever possible, especially for removable devices.";
-      // 
-      // cbx_DriveGUID
-      // 
-      this.cbx_DriveGUID.DrawMode = System.Windows.Forms.DrawMode.OwnerDrawVariable;
-      this.cbx_DriveGUID.Location = new System.Drawing.Point(301, 239);
-      this.cbx_DriveGUID.Margin = new System.Windows.Forms.Padding(7);
-      this.cbx_DriveGUID.Name = "cbx_DriveGUID";
-      this.cbx_DriveGUID.Size = new System.Drawing.Size(710, 36);
-      this.cbx_DriveGUID.TabIndex = 105;
-      this.cbx_DriveGUID.Validated += new System.EventHandler(this.txt_DriveGUID_Validated);
-      // 
-      // cbx_DriveMountPoint
-      // 
-      this.cbx_DriveMountPoint.DrawMode = System.Windows.Forms.DrawMode.OwnerDrawVariable;
-      this.cbx_DriveMountPoint.Location = new System.Drawing.Point(301, 119);
-      this.cbx_DriveMountPoint.Margin = new System.Windows.Forms.Padding(7);
-      this.cbx_DriveMountPoint.Name = "cbx_DriveMountPoint";
-      this.cbx_DriveMountPoint.Size = new System.Drawing.Size(710, 36);
-      this.cbx_DriveMountPoint.TabIndex = 102;
-      this.cbx_DriveMountPoint.Validated += new System.EventHandler(this.cbx_DriveMountPoint_Validated);
       // 
       // grp_Unlock
       // 
@@ -208,7 +167,7 @@ namespace KeeLocker.Forms
       this.grp_Unlock.Controls.Add(this.chk_UnlockOnOpening);
       this.grp_Unlock.Controls.Add(this.chk_UnlockOnConnection);
       this.grp_Unlock.Controls.Add(this.btn_Unlock);
-      this.grp_Unlock.Location = new System.Drawing.Point(21, 437);
+      this.grp_Unlock.Location = new System.Drawing.Point(21, 320);
       this.grp_Unlock.Margin = new System.Windows.Forms.Padding(7);
       this.grp_Unlock.Name = "grp_Unlock";
       this.grp_Unlock.Padding = new System.Windows.Forms.Padding(7);
@@ -261,7 +220,7 @@ namespace KeeLocker.Forms
       this.Controls.Add(this.grp_Drive);
       this.Margin = new System.Windows.Forms.Padding(7);
       this.Name = "KeeLockerEntryTab";
-      this.Size = new System.Drawing.Size(1127, 723);
+      this.Size = new System.Drawing.Size(1079, 723);
       this.grp_Drive.ResumeLayout(false);
       this.grp_Drive.PerformLayout();
       this.grp_Unlock.ResumeLayout(false);
@@ -273,22 +232,19 @@ namespace KeeLocker.Forms
 		}
 
 		#endregion
-		private RichComboBox cbx_DriveMountPoint;
 		private System.Windows.Forms.CheckBox chk_UnlockOnOpening;
 		private System.Windows.Forms.CheckBox chk_UnlockOnConnection;
 		private System.Windows.Forms.Button btn_Unlock;
-		private System.Windows.Forms.RadioButton rdo_MountPoint;
-		private System.Windows.Forms.RadioButton rdo_DriveGUID;
-		private RichComboBox cbx_DriveGUID;
 		private System.Windows.Forms.GroupBox grp_Drive;
 		private System.Windows.Forms.GroupBox grp_Unlock;
-		private System.Windows.Forms.Button btn_DriveGUID;
-		private System.Windows.Forms.Label lbl_DriveGUID;
 		private System.Windows.Forms.CheckBox chk_IsRecoveryKey;
 		private System.Windows.Forms.Label label1;
 		private RichComboBox cbx_SystemVolume;
 		private System.Windows.Forms.Label txt_Info;
 		private System.Windows.Forms.Button btn_Clear;
 		private System.Windows.Forms.PictureBox icon;
+		private System.Windows.Forms.Button btn_RefreshVolumes;
+		private System.Windows.Forms.TextBox tx_Custom;
+		private System.Windows.Forms.Label lbl_Custom;
 	}
 }

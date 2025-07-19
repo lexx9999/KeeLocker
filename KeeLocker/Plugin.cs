@@ -1,25 +1,25 @@
-﻿using KeeLocker.Forms;
+﻿using KeeLocker.BitLockerWMI;
+using KeeLocker.Forms;
 using KeePassLib;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
-using System.Security.Policy;
-using System.Security.Principal;
+using System.IO;
 using System.Windows.Forms;
 
 namespace KeeLocker
 {
 	public partial class KeeLockerExt : KeePass.Plugins.Plugin
 	{
-		public const string StringName_DriveMountPoint = KeeLocker.Globals.CONFIG_PREFIX + "MountPoint";
-		public const string StringName_DriveGUID = KeeLocker.Globals.CONFIG_PREFIX + "GUID";
-		public const string StringName_DriveIdType = KeeLocker.Globals.CONFIG_PREFIX + "Type";
-		public const string StringName_UnlockOnOpening = KeeLocker.Globals.CONFIG_PREFIX + "OnOpening";
-		public const string StringName_UnlockOnConnection = KeeLocker.Globals.CONFIG_PREFIX + "OnConnection";
-		public const string StringName_IsRecoveryKey = KeeLocker.Globals.CONFIG_PREFIX + "IsRecoveryKey";
+		public const string StringName_DriveMountPoint = Globals.CONFIG_PREFIX + "MountPoint";
+		public const string StringName_DriveGUID = Globals.CONFIG_PREFIX + "GUID";
+		public const string StringName_DriveIdType = Globals.CONFIG_PREFIX + "Type";
+		public const string StringName_UnlockOnOpening = Globals.CONFIG_PREFIX + "OnOpening";
+		public const string StringName_UnlockOnConnection = Globals.CONFIG_PREFIX + "OnConnection";
+		public const string StringName_IsRecoveryKey = Globals.CONFIG_PREFIX + "IsRecoveryKey";
+		public const string StringName_RecoveryKey = "RecoveryKey";
 
-		public const string StringName_Password = "Password";
 		internal KeePass.Plugins.IPluginHost m_host;
 		internal FveApi.SSubscription m_Subscription;
 		System.Drawing.Image m_Image = null;
@@ -29,7 +29,7 @@ namespace KeeLocker
 		{
 			get
 			{
-				return KeeLocker.Globals.UPDATE_URL;
+				return Globals.UPDATE_URL;
 			}
 		}
 
@@ -50,8 +50,8 @@ namespace KeeLocker
 			m_host = host;
 
 			// Signed update checks
-			if (UpdateUrl != null && KeeLocker.Globals.FILE_SIGN_KEY != null)
-				KeePass.Util.UpdateCheckEx.SetFileSigKey(UpdateUrl, KeeLocker.Globals.FILE_SIGN_KEY);
+			if (UpdateUrl != null && Globals.FILE_SIGN_KEY != null)
+				KeePass.Util.UpdateCheckEx.SetFileSigKey(UpdateUrl, Globals.FILE_SIGN_KEY);
 
 			// register FileOpened event : needed to open locked storages
 			m_host.MainWindow.FileOpened += OnKPDBOpen;
@@ -64,8 +64,8 @@ namespace KeeLocker
 			//bool runScanAdmin = false;
 			//foreach (KeyValuePair<string, string> kv in host.CommandLineArgs.Parameters)
 			//{
-			
-			// if (kv.Key.Equals(KeeLocker.Globals.APP_NAME+"Scan", StringComparison.InvariantCultureIgnoreCase))
+
+			// if (kv.Key.Equals(Globals.APP_NAME+"Scan", StringComparison.InvariantCultureIgnoreCase))
 			//	{
 			//		runScanAdmin = true;
 			//		break;
@@ -75,6 +75,7 @@ namespace KeeLocker
 			//{
 
 			//}
+
 
 			// host.CustomConfig.SetString("KeeLocker_Hello", "Welcome");
 			return true;
@@ -93,19 +94,14 @@ namespace KeeLocker
 
 
 
-        private static bool IsAdministrator()
-		{
-			WindowsIdentity identity = WindowsIdentity.GetCurrent();
-			WindowsPrincipal principal = new WindowsPrincipal(identity);
-			return principal.IsInRole(WindowsBuiltInRole.Administrator);
-		}
+
 
 		public override System.Windows.Forms.ToolStripMenuItem GetMenuItem(KeePass.Plugins.PluginMenuType t)
 		{
 			switch (t)
 			{
 				case KeePass.Plugins.PluginMenuType.Main:
-					return createAppMenu(createUnlockThisDBMenuItem(), (IsAdministrator() && Debugger.IsAttached) ?  createSearchVolumesMenuItem() : null, createOpenHomeMenuItem());
+					return createAppMenu(createUnlockThisDBMenuItem(),  createSearchVolumesMenuItem() , createOpenHomeMenuItem());
 				case KeePass.Plugins.PluginMenuType.Group:
 					return createAppMenu(createUnlockGroupMenuItem());
 				case KeePass.Plugins.PluginMenuType.Entry:
@@ -121,7 +117,7 @@ namespace KeeLocker
 				return null;
 
 			System.Windows.Forms.ToolStripMenuItem AppSubMenu = new System.Windows.Forms.ToolStripMenuItem();
-			AppSubMenu.Text = KeeLocker.Globals.APP_NAME;
+			AppSubMenu.Text = Globals.APP_NAME;
 			AppSubMenu.Image = SmallIcon;
 			foreach (ToolStripMenuItem item in items) if(item!=null)
 			{
@@ -129,9 +125,9 @@ namespace KeeLocker
 				if (item.Image == SmallIcon)
 					item.Image = null;
 				string t = item.Text;
-				if (t.StartsWith(KeeLocker.Globals.APP_NAME + " "))
+				if (t.StartsWith(Globals.APP_NAME + " "))
 				{
-					t = t.Substring(KeeLocker.Globals.APP_NAME.Length + 1);
+					t = t.Substring(Globals.APP_NAME.Length + 1);
 					t = t.Substring(0, 1).ToUpper() + t.Substring(1);
 					item.Text = t;
 				}
@@ -155,7 +151,7 @@ namespace KeeLocker
 		private ToolStripMenuItem createOpenHomeMenuItem()
 		{
 			System.Windows.Forms.ToolStripMenuItem OpenHomeUrl = new System.Windows.Forms.ToolStripMenuItem();
-			OpenHomeUrl.Text = "Open "+Globals.APP_NAME+" Homepage";
+			OpenHomeUrl.Text = "Open "+Globals.APP_NAME+"(LEXX) Homepage";
 			OpenHomeUrl.Click += delegate (object sender, EventArgs e)
 			{
 				OpenHomepage();
@@ -171,7 +167,7 @@ namespace KeeLocker
 		private ToolStripMenuItem createSearchVolumesMenuItem()
 		{
 			System.Windows.Forms.ToolStripMenuItem ScanConnected = new System.Windows.Forms.ToolStripMenuItem();
-			ScanConnected.Text = "Search volumes...";
+			ScanConnected.Text = string.Format("Search BitLocker volumes (Admin-only) into '{0}'", VolumeSearchResultGroup);
 			ScanConnected.Click += this.ScanConnectedVolumes;
 			ScanConnected.Paint += delegate (object sender, System.Windows.Forms.PaintEventArgs e)
 			{
@@ -228,7 +224,8 @@ namespace KeeLocker
 
 			return Controls[0] as Type;
 		}
-		const string KeeLockerTabName = KeeLocker.Globals.APP_NAME + "Tab";
+		const string KeeLockerTabName = Globals.APP_NAME + "Tab";
+		private const string VolumeSearchResultGroup = Globals.APP_NAME + "-VolumeSearch";
 
 		void OnEntryFormShown(object sender, EventArgs e)
 		{
@@ -249,7 +246,7 @@ namespace KeeLocker
 
 			KeeLocker.Forms.KeeLockerEntryTab KeeLockerEntryTab = new KeeLocker.Forms.KeeLockerEntryTab(m_host, this, Entry, strings, Form);
 
-			System.Windows.Forms.TabPage KeeLockerEntryTabContainer = new System.Windows.Forms.TabPage(KeeLocker.Globals.APP_NAME);
+			System.Windows.Forms.TabPage KeeLockerEntryTabContainer = new System.Windows.Forms.TabPage(Globals.APP_NAME);
 			KeeLockerEntryTabContainer.Name = KeeLockerTabName;
 			KeeLockerEntryTabContainer.Tag = KeeLockerEntryTab;
 			KeeLockerEntryTabContainer.Controls.Add(KeeLockerEntryTab);
@@ -297,15 +294,165 @@ namespace KeeLocker
 			}
 		}
 
+
+		public void CreateUpdateScanResultsGroup(System.Collections.Generic.List<BitLockerWMI.VolumeInfo> volumeList, string groupName)
+		{
+			PwGroup scanResultGroup = m_host.Database.RootGroup.FindCreateGroup(groupName, true);
+
+			foreach (var volume in volumeList)
+			{
+				if (volume.EncryptionMethod == 0)
+					continue;
+
+				string recoveryKey = null;
+				string recoveryKeyId = null;
+
+				bool password = false;
+
+				if (volume.KeyProtectors != null)
+				{
+					foreach (var protector in volume.KeyProtectors)
+					{
+						switch (protector.Type)
+						{
+							case ProtectorType.NumericalPassword:
+								recoveryKey = protector.NumericalPassword;
+								recoveryKeyId = UnBrace(protector.ID);
+								break;
+							case ProtectorType.Passphrase:
+								password = true;
+								break;
+						}
+
+					}
+				}
+
+				var M = Common.volumeRx.Match(volume.VolumeID);
+				if (M.Success)
+				{
+					volume.VolumeID = @"\\?\" + M.Groups[1] + @"\";
+				}
+				M = Common.driveRx.Match(volume.DriveLetter);
+				if (M.Success)
+				{
+					volume.DriveLetter = M.Groups[1].Value.ToUpperInvariant() + @"\";
+				}
+				VolumeInfo vi = new VolumeInfo { MountPoint = volume.DriveLetter, Volume = volume.VolumeID, DriveIdType = EDriveIdType.GUID };
+				if (!string.IsNullOrEmpty(volume.DriveLetter))
+				{
+					try
+					{
+						vi.DriveInfo = new DriveInfo(volume.DriveLetter);
+					}
+					catch { }
+				}
+
+
+				var pe = new KeePassLib.PwEntry(true, true);
+				EDriveIdType driveIdType;
+
+				if (!string.IsNullOrEmpty(volume.VolumeID))
+					driveIdType = EDriveIdType.GUID;
+				else if (!string.IsNullOrEmpty(volume.DriveLetter))
+					driveIdType = EDriveIdType.MountPoint;
+				else
+					driveIdType = Common.DriveIdTypeDefault;
+
+				pe.Strings.Set(PwDefs.UserNameField, new KeePassLib.Security.ProtectedString(false,
+					Common.FirstNotNullNorEmpty(recoveryKeyId,volume.PersistentVolumeID, volume.VolumeID, volume.DriveLetter)));
+
+				if (recoveryKey != null && password)
+				{
+					// pe.Strings.Set(KeeLockerExt.StringName_Password, null);
+					pe.Strings.Set(KeeLockerExt.StringName_RecoveryKey, new KeePassLib.Security.ProtectedString(true, recoveryKey));
+					pe.Strings.Set(KeeLockerExt.StringName_IsRecoveryKey, new KeePassLib.Security.ProtectedString(false, Common.BoolFor(false, true)));
+					pe.Strings.Set(PwDefs.NotesField, new KeePassLib.Security.ProtectedString(false, string.Format("Recovery Key stored in field '{0}'", KeeLockerExt.StringName_RecoveryKey) ));
+				}
+				else if (recoveryKey != null)
+				{
+					// only recovery key, store as password
+					pe.Strings.Set(PwDefs.PasswordField, new KeePassLib.Security.ProtectedString(true, recoveryKey));
+					pe.Strings.Set(KeeLockerExt.StringName_IsRecoveryKey, new KeePassLib.Security.ProtectedString(false, Common.BoolFor(true, false)));
+
+				}
+				else
+				{
+					pe.Strings.Set(KeeLockerExt.StringName_IsRecoveryKey, new KeePassLib.Security.ProtectedString(false, Common.BoolFor(false, true)));
+				}
+				if (password)
+				{
+					// add note to fill password manually
+					pe.Strings.Set(PwDefs.NotesField, new KeePassLib.Security.ProtectedString(false, "Password needs to be filled manually"));
+				pe.IconId = PwIcon.Warning;
+				}
+
+				pe.Strings.Set(KeeLockerExt.StringName_DriveIdType, new KeePassLib.Security.ProtectedString(false, driveIdType == Common.DriveIdTypeDefault ? "" : driveIdType.ToString()));
+				pe.Strings.Set(KeeLockerExt.StringName_DriveGUID, new KeePassLib.Security.ProtectedString(false, volume.VolumeID));
+				pe.Strings.Set(KeeLockerExt.StringName_DriveMountPoint, new KeePassLib.Security.ProtectedString(false, volume.DriveLetter));
+
+				pe.Strings.Set(PwDefs.TitleField, new KeePassLib.Security.ProtectedString(false, "BitLocker "+vi.DisplayText));
+
+				if (null==findDuplicate(scanResultGroup, pe))
+				scanResultGroup.AddEntry(pe, true);
+
+			}
+			m_host.MainWindow.UpdateUI(false, null, true, scanResultGroup, true, scanResultGroup, true);
+		}
+
+		private PwEntry findDuplicate(PwGroup group, PwEntry pe)
+		{
+
+			const PwCompareOptions coAll = (PwCompareOptions.NullEmptyEquivStd |
+				PwCompareOptions.IgnoreParentGroup | PwCompareOptions.IgnoreTimes |
+				PwCompareOptions.IgnoreHistory| PwCompareOptions.IgnoreLastBackup); 
+
+
+			foreach (PwEntry ge in group.GetEntries(false))
+			{
+				if (pe.Strings.EqualsDictionary(ge.Strings, coAll, MemProtCmpMode.CustomOnly))
+					return ge;
+			}
+			return null;
+		}
+
+		private string UnBrace(string uuid)
+		{
+			if (uuid == null || !uuid.StartsWith("{") || !uuid.EndsWith("}"))
+				return uuid;
+			return uuid.Substring(1, uuid.Length-1);
+		}
+
 		private void ScanConnectedVolumes(object sender, EventArgs e)
 		{
-			KeeLockerScanResults scanResults = new KeeLockerScanResults();
-			KeePass.UI.UIUtil.ShowDialogAndDestroy(scanResults);
+			if (!BitLocker.IsAdministrator())
+			{
+				ShowBalloonNotification("KeePass must be started as Administrator to allow scanning for volumes!");
+				return;
+			}
+
+			var volumeList = BitLocker.GetBitLockerVolumes();
+			bool hasEncrypted = volumeList.Find(v => v.EncryptionMethod != 0) != null;
+
+			if (!hasEncrypted)
+			{
+				ShowBalloonNotification("No encrypted volumes found");
+				return;
+			}
+			string searchGroupName = VolumeSearchResultGroup;
+
+			CreateUpdateScanResultsGroup(volumeList, searchGroupName);
+			ShowBalloonNotification(string.Format("Encrypted volume entries added to '{0}' (if any)", searchGroupName));
+
+			if (Debugger.IsAttached || ((Control.ModifierKeys & Keys.Shift) == Keys.Shift))
+			{
+				KeeLockerScanResults scanResults = new KeeLockerScanResults(m_host, this, volumeList);
+				KeePass.UI.UIUtil.ShowDialogAndDestroy(scanResults);
+			}
 		}
 
 		private void UnlockThisDB(object sender, EventArgs e)
 		{
-			UnlockDatabase(m_host.MainWindow.ActiveDatabase, EUnlockReason.DatabaseOpening, sender as ToolStripMenuItem);
+			UnlockDatabase(m_host.MainWindow.ActiveDatabase, EUnlockReason.UserRequest, sender as ToolStripMenuItem);
 		}
 
 		private void UnlockGroup(object sender, EventArgs e)
@@ -325,6 +472,7 @@ namespace KeeLocker
 			Common.UnlockBitLocker(unlockset, EUnlockReason.UserRequest, m_host.MainWindow, (long SucceededCount, long AttemptedCount) =>
 		  {
 			  if (UnlockEntry != null) UnlockEntry.Enabled = true;
+			  reportUnlockStatus(SucceededCount, AttemptedCount);
 		  });
 		}
 
@@ -342,27 +490,29 @@ namespace KeeLocker
 				return;
 			if (sender != null) sender.Enabled = false;
 			Common.UnlockBitLocker(unlockset, UnlockReason, m_host.MainWindow, (long SucceededCount, long AttemptedCount) =>
-			 {
-				 if (sender != null) sender.Enabled = true;
-				 if (AttemptedCount > 0)
-				 {
-					 if (UnlockReason == EUnlockReason.DatabaseOpening || UnlockReason == EUnlockReason.DriveConnected)
-					 {
-						 string info = KeeLocker.Globals.APP_NAME + " unlocked volumes";
-						 if (-1 == m_host.MainWindow.Text.IndexOf(info))
-						 {
-							 m_host.MainWindow.Text = m_host.MainWindow.Text + " - " + info;
-							 ShowBalloonNotification(info);
-						 }
-					 }
-				 }
-			 });
+			{
+				if (sender != null) sender.Enabled = true;
+				reportUnlockStatus(SucceededCount, AttemptedCount);
+			});
+		}
+
+		private void reportUnlockStatus(long SucceededCount, long AttemptedCount)
+		{
+			if (AttemptedCount > 0)
+			{
+				string info = (SucceededCount < AttemptedCount) ? string.Format("{0} unlocked {1} of {2} volumes", Globals.APP_NAME, SucceededCount, AttemptedCount) : Globals.APP_NAME + " unlocked volumes";
+				if (-1 == m_host.MainWindow.Text.IndexOf(info))
+				{
+					m_host.MainWindow.Text = m_host.MainWindow.Text + " - " + info;
+					ShowBalloonNotification(info);
+				}
+			}
 		}
 
 		private void ShowBalloonNotification(string info)
 		{
 			m_host.MainWindow.MainNotifyIcon.ShowBalloonTip(
-			  5000, KeeLocker.Globals.APP_NAME,
+			  5000, Globals.APP_NAME,
 			  info, ToolTipIcon.Info);
 		}
 
@@ -397,7 +547,7 @@ namespace KeeLocker
 
 				KeePassLib.Security.ProtectedString DriveIdTypeStr = Strings.Get(StringName_DriveIdType);
 				KeePassLib.Security.ProtectedString IsRecoveryKey = Strings.Get(StringName_IsRecoveryKey);
-				KeePassLib.Security.ProtectedString Password = Strings.Get(StringName_Password);
+				KeePassLib.Security.ProtectedString Password = Strings.Get(PwDefs.PasswordField);
 				bool IsRecoveryKey_bool = Common.GetBoolSetting(IsRecoveryKey, Common.DefaultIsRecoveryKey);
 
 				if (Password == null || Password.IsEmpty)
