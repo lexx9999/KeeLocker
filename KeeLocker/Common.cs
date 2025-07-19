@@ -42,6 +42,22 @@ namespace KeeLocker
 			return Math.Floor(f).ToString("F0") + suffix.Substring(s * 2, 2); ;
 		}
 
+		internal static string NullForEmpty(string str)
+		{
+			return string.IsNullOrEmpty(str) ? null : str;
+		}
+		
+		internal static string FirstNotNullNorEmpty(params string[] strs)
+		{
+			foreach (string str in strs)
+			{
+				if (!string.IsNullOrEmpty(str))
+					return str;
+			}
+			return null;
+		}
+
+
 		internal static bool GetBoolSetting(KeePassLib.Security.ProtectedString Value, bool defaultValue)
 		{
 			if (Value == null)

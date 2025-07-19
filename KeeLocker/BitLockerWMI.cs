@@ -29,6 +29,7 @@ namespace KeeLocker.BitLockerWMI
 		public ProtectorType Type { get; set; }
 
 		public string NumericalPassword { get; set; }
+		// public string FriendlyName { get; set; } // WARN: Tried but was always empty
 	}
 	public class VolumeInfo
 	{
@@ -118,9 +119,9 @@ namespace KeeLocker.BitLockerWMI
 
 							info.KeyProtectors.Add(new KeyProtectorInfo
 							{
-								ID =  protectorId,
+								ID =  Common.NullForEmpty(protectorId),
 								Type = KeyProtectorType,
-								NumericalPassword =  NumericalPassword,
+								NumericalPassword = Common.NullForEmpty( NumericalPassword),
 							});
 						}
 
