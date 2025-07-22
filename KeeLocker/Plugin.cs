@@ -317,7 +317,7 @@ namespace KeeLocker
 						{
 							case ProtectorType.NumericalPassword:
 								recoveryKey = protector.NumericalPassword;
-								recoveryKeyId = UnBrace(protector.ID);
+								recoveryKeyId = UnBrace(protector.ID); 
 								break;
 							case ProtectorType.Passphrase:
 								password = true;
@@ -419,7 +419,7 @@ namespace KeeLocker
 		{
 			if (uuid == null || !uuid.StartsWith("{") || !uuid.EndsWith("}"))
 				return uuid;
-			return uuid.Substring(1, uuid.Length-1);
+			return uuid.Substring(1, uuid.Length-2);
 		}
 
 		private void ScanConnectedVolumes(object sender, EventArgs e)
