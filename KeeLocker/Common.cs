@@ -1,11 +1,10 @@
-﻿using KeePassLib.Native;
-using KeePassLib.Security;
+﻿using KeePassLib.Security;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 
 namespace KeeLocker
@@ -17,6 +16,9 @@ namespace KeeLocker
 		public const bool DefaultIsRecoveryKey = false;
 		public const bool DefaultUnlockOnConnection = false;
 		public const bool DefaultUnlockOnOpening = false;
+
+		internal static readonly Regex volumeRx = new Regex(@"^(?:\\{2}\?\\)?(Volume\{[0-9a-z-]+\})\\*", RegexOptions.IgnoreCase); 
+		internal static readonly Regex driveRx = new Regex(@"^(?:\\{2}\?\\)?([a-z]:)\\*$", RegexOptions.IgnoreCase);
 		internal static string FormatSize(long totalSize)
 		{
 			if (totalSize <= 0)
@@ -39,6 +41,22 @@ namespace KeeLocker
 			}
 			return Math.Floor(f).ToString("F0") + suffix.Substring(s * 2, 2); ;
 		}
+
+		internal static string NullForEmpty(string str)
+		{
+			return string.IsNullOrEmpty(str) ? null : str;
+		}
+		
+		internal static string FirstNotNullNorEmpty(params string[] strs)
+		{
+			foreach (string str in strs)
+			{
+				if (!string.IsNullOrEmpty(str))
+					return str;
+			}
+			return null;
+		}
+
 
 		internal static bool GetBoolSetting(KeePassLib.Security.ProtectedString Value, bool defaultValue)
 		{
@@ -80,7 +98,7 @@ namespace KeeLocker
 				{
 					tried++;
 					FveApi.Result result = item.Unlock();
-					if (result != FveApi.Result.Ok)
+					if (result == FveApi.Result.Ok)
 						succeeded++;
 
 				}
@@ -209,8 +227,19 @@ namespace KeeLocker
 				return sb.ToString();
 			}
 		}
-	}
 
+		public string CustomText
+		{
+			get
+			{
+				if (!string.IsNullOrEmpty(Volume))
+					return Volume;
+				if (!string.IsNullOrEmpty(MountPoint))
+					return MountPoint;
+				return string.Empty;
+			}
+		}
+	}
 
 	internal class BitLockerItem
 	{
