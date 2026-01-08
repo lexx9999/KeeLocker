@@ -328,4 +328,27 @@ namespace KeeLocker
 		}
 	}
 
+	internal static class OS
+	{
+		public static readonly bool IsWindows;
+		public static readonly bool IsLinux;
+		public static readonly bool IsMac;
+		public static readonly bool IsMono;
+
+		static OS()
+		{
+			PlatformID p = Environment.OSVersion.Platform;
+
+			IsWindows = p == PlatformID.Win32NT
+					 || p == PlatformID.Win32S
+					 || p == PlatformID.Win32Windows
+					 || p == PlatformID.WinCE;
+
+			IsLinux = p == PlatformID.Unix;
+			IsMac = p == PlatformID.MacOSX;
+
+			// Mono detection (works on all .NET Framework versions)
+			IsMono = Type.GetType("Mono.Runtime") != null;
+		}
+	}
 }

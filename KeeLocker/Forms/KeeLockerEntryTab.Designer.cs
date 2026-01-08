@@ -52,7 +52,7 @@ namespace KeeLocker.Forms
       // 
       this.chk_UnlockOnOpening.AutoSize = true;
       this.chk_UnlockOnOpening.Location = new System.Drawing.Point(35, 34);
-      this.chk_UnlockOnOpening.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+      this.chk_UnlockOnOpening.Margin = new System.Windows.Forms.Padding(4);
       this.chk_UnlockOnOpening.Name = "chk_UnlockOnOpening";
       this.chk_UnlockOnOpening.Size = new System.Drawing.Size(249, 20);
       this.chk_UnlockOnOpening.TabIndex = 106;
@@ -64,7 +64,7 @@ namespace KeeLocker.Forms
       // 
       this.chk_UnlockOnConnection.AutoSize = true;
       this.chk_UnlockOnConnection.Location = new System.Drawing.Point(35, 70);
-      this.chk_UnlockOnConnection.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+      this.chk_UnlockOnConnection.Margin = new System.Windows.Forms.Padding(4);
       this.chk_UnlockOnConnection.Name = "chk_UnlockOnConnection";
       this.chk_UnlockOnConnection.Size = new System.Drawing.Size(218, 20);
       this.chk_UnlockOnConnection.TabIndex = 107;
@@ -75,7 +75,7 @@ namespace KeeLocker.Forms
       // btn_Unlock
       // 
       this.btn_Unlock.Location = new System.Drawing.Point(332, 27);
-      this.btn_Unlock.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+      this.btn_Unlock.Margin = new System.Windows.Forms.Padding(4);
       this.btn_Unlock.Name = "btn_Unlock";
       this.btn_Unlock.Size = new System.Drawing.Size(149, 28);
       this.btn_Unlock.TabIndex = 109;
@@ -92,9 +92,9 @@ namespace KeeLocker.Forms
       this.grp_Drive.Controls.Add(this.label1);
       this.grp_Drive.Controls.Add(this.cbx_SystemVolume);
       this.grp_Drive.Location = new System.Drawing.Point(12, 9);
-      this.grp_Drive.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+      this.grp_Drive.Margin = new System.Windows.Forms.Padding(4);
       this.grp_Drive.Name = "grp_Drive";
-      this.grp_Drive.Padding = new System.Windows.Forms.Padding(4, 4, 4, 4);
+      this.grp_Drive.Padding = new System.Windows.Forms.Padding(4);
       this.grp_Drive.Size = new System.Drawing.Size(586, 157);
       this.grp_Drive.TabIndex = 112;
       this.grp_Drive.TabStop = false;
@@ -103,7 +103,7 @@ namespace KeeLocker.Forms
       // tx_Custom
       // 
       this.tx_Custom.Location = new System.Drawing.Point(74, 83);
-      this.tx_Custom.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+      this.tx_Custom.Margin = new System.Windows.Forms.Padding(2);
       this.tx_Custom.Name = "tx_Custom";
       this.tx_Custom.Size = new System.Drawing.Size(504, 22);
       this.tx_Custom.TabIndex = 113;
@@ -123,7 +123,7 @@ namespace KeeLocker.Forms
       // btn_RefreshVolumes
       // 
       this.btn_RefreshVolumes.Location = new System.Drawing.Point(427, 23);
-      this.btn_RefreshVolumes.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+      this.btn_RefreshVolumes.Margin = new System.Windows.Forms.Padding(4);
       this.btn_RefreshVolumes.Name = "btn_RefreshVolumes";
       this.btn_RefreshVolumes.Size = new System.Drawing.Size(149, 28);
       this.btn_RefreshVolumes.TabIndex = 111;
@@ -134,7 +134,7 @@ namespace KeeLocker.Forms
       // btn_Clear
       // 
       this.btn_Clear.Location = new System.Drawing.Point(427, 118);
-      this.btn_Clear.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+      this.btn_Clear.Margin = new System.Windows.Forms.Padding(4);
       this.btn_Clear.Name = "btn_Clear";
       this.btn_Clear.Size = new System.Drawing.Size(149, 28);
       this.btn_Clear.TabIndex = 110;
@@ -157,7 +157,7 @@ namespace KeeLocker.Forms
       this.cbx_SystemVolume.DrawMode = System.Windows.Forms.DrawMode.OwnerDrawVariable;
       this.cbx_SystemVolume.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
       this.cbx_SystemVolume.Location = new System.Drawing.Point(13, 54);
-      this.cbx_SystemVolume.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+      this.cbx_SystemVolume.Margin = new System.Windows.Forms.Padding(4);
       this.cbx_SystemVolume.Name = "cbx_SystemVolume";
       this.cbx_SystemVolume.Size = new System.Drawing.Size(566, 23);
       this.cbx_SystemVolume.TabIndex = 106;
@@ -171,9 +171,9 @@ namespace KeeLocker.Forms
       this.grp_Unlock.Controls.Add(this.chk_UnlockOnConnection);
       this.grp_Unlock.Controls.Add(this.btn_Unlock);
       this.grp_Unlock.Location = new System.Drawing.Point(12, 177);
-      this.grp_Unlock.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+      this.grp_Unlock.Margin = new System.Windows.Forms.Padding(4);
       this.grp_Unlock.Name = "grp_Unlock";
-      this.grp_Unlock.Padding = new System.Windows.Forms.Padding(4, 4, 4, 4);
+      this.grp_Unlock.Padding = new System.Windows.Forms.Padding(4);
       this.grp_Unlock.Size = new System.Drawing.Size(588, 135);
       this.grp_Unlock.TabIndex = 111;
       this.grp_Unlock.TabStop = false;
@@ -183,7 +183,7 @@ namespace KeeLocker.Forms
       // 
       this.icon.InitialImage = null;
       this.icon.Location = new System.Drawing.Point(559, 107);
-      this.icon.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+      this.icon.Margin = new System.Windows.Forms.Padding(2);
       this.icon.Name = "icon";
       this.icon.Size = new System.Drawing.Size(18, 18);
       this.icon.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
@@ -195,7 +195,7 @@ namespace KeeLocker.Forms
       // 
       this.chk_IsRecoveryKey.AutoSize = true;
       this.chk_IsRecoveryKey.Location = new System.Drawing.Point(35, 107);
-      this.chk_IsRecoveryKey.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+      this.chk_IsRecoveryKey.Margin = new System.Windows.Forms.Padding(4);
       this.chk_IsRecoveryKey.Name = "chk_IsRecoveryKey";
       this.chk_IsRecoveryKey.Size = new System.Drawing.Size(226, 20);
       this.chk_IsRecoveryKey.TabIndex = 108;
@@ -222,7 +222,7 @@ namespace KeeLocker.Forms
       this.Controls.Add(this.txt_Info);
       this.Controls.Add(this.grp_Unlock);
       this.Controls.Add(this.grp_Drive);
-      this.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+      this.Margin = new System.Windows.Forms.Padding(4);
       this.Name = "KeeLockerEntryTab";
       this.Size = new System.Drawing.Size(617, 399);
       this.grp_Drive.ResumeLayout(false);

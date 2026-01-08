@@ -122,8 +122,10 @@ namespace KeeLocker
 			System.Windows.Forms.ToolStripMenuItem AppSubMenu = new System.Windows.Forms.ToolStripMenuItem();
 			AppSubMenu.Text = Globals.APP_NAME;
 			AppSubMenu.Image = SmallIcon;
+			bool hasAny = false;
 			foreach (ToolStripMenuItem item in items) if (item != null)
 				{
+					hasAny = true;
 					AppSubMenu.DropDownItems.Add(item);
 					if (item.Image == SmallIcon)
 						item.Image = null;
@@ -136,12 +138,15 @@ namespace KeeLocker
 					}
 
 				}
-			return AppSubMenu;
+			return hasAny ? AppSubMenu : null;
 		}
 
 
 		private ToolStripMenuItem createUnlockGroupMenuItem()
 		{
+			if (!OS.IsWindows)
+				return null;
+
 			System.Windows.Forms.ToolStripMenuItem UnlockGroup = new System.Windows.Forms.ToolStripMenuItem();
 			UnlockGroup.Text = "Unlock volumes in this group";
 			UnlockGroup.Click += this.UnlockGroup;
@@ -169,6 +174,9 @@ namespace KeeLocker
 
 		private ToolStripMenuItem createSearchVolumesMenuItem()
 		{
+			if (!OS.IsWindows)
+				return null;
+
 			System.Windows.Forms.ToolStripMenuItem ScanConnected = new System.Windows.Forms.ToolStripMenuItem();
 			ScanConnected.Text = string.Format("Search BitLocker volumes into '{0}' (Runs KeeLockerAgent elevated if needed)", VolumeSearchResultGroup);
 			ScanConnected.Click += this.ScanConnectedVolumes;
@@ -181,6 +189,9 @@ namespace KeeLocker
 
 		private ToolStripMenuItem createUnlockEntryMenuItem()
 		{
+			if (!OS.IsWindows)
+				return null;
+
 			System.Windows.Forms.ToolStripMenuItem UnlockEntry = new System.Windows.Forms.ToolStripMenuItem();
 			UnlockEntry.Click += this.UnlockEntries;
 			UnlockEntry.Paint += delegate (object sender, System.Windows.Forms.PaintEventArgs e)
@@ -195,6 +206,9 @@ namespace KeeLocker
 
 		private ToolStripMenuItem createUnlockThisDBMenuItem()
 		{
+			if (!OS.IsWindows)
+				return null;
+
 			System.Windows.Forms.ToolStripMenuItem UnlockThisDB = new System.Windows.Forms.ToolStripMenuItem();
 			UnlockThisDB.Text = "Unlock volumes in this DB";
 			UnlockThisDB.Click += this.UnlockThisDB;

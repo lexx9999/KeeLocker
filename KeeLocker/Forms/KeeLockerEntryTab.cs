@@ -56,15 +56,30 @@ namespace KeeLocker.Forms
 			SetStatus(null);
 
 			UpdateUi();
+
+			if (!OS.IsWindows)
+			{
+				btn_Unlock.Enabled = false;
+			}
 		}
 
 		public static IList<VolumeInfo> EnumVolumeInfo()
 		{
-			int M = 1024;
-			IntPtr INVALID_HANDLE_VALUE = new IntPtr(-1);
+			if (OS.IsWindows)
+			{
+				return EnumVolumeInfoWin();
+			}
+			return new List<VolumeInfo>();
+		}
+
+		public static IList<VolumeInfo> EnumVolumeInfoWin()
+		{new List<VolumeInfo>();
 
 			IList<VolumeInfo> volumeInfo = new List<VolumeInfo>();
 
+
+			int M = 1024;
+			IntPtr INVALID_HANDLE_VALUE = new IntPtr(-1);
 			StringBuilder sb = new StringBuilder(M);
 			IntPtr H = FveApi.FindFirstVolume(sb, (uint)sb.Capacity);
 			if (H != INVALID_HANDLE_VALUE)
