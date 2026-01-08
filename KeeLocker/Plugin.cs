@@ -170,7 +170,7 @@ namespace KeeLocker
 		private ToolStripMenuItem createSearchVolumesMenuItem()
 		{
 			System.Windows.Forms.ToolStripMenuItem ScanConnected = new System.Windows.Forms.ToolStripMenuItem();
-			ScanConnected.Text = string.Format("Search BitLocker volumes (Admin-only) into '{0}'", VolumeSearchResultGroup);
+			ScanConnected.Text = string.Format("Search BitLocker volumes into '{0}' (Runs KeeLockerAgent elevated if needed)", VolumeSearchResultGroup);
 			ScanConnected.Click += this.ScanConnectedVolumes;
 			ScanConnected.Paint += delegate (object sender, System.Windows.Forms.PaintEventArgs e)
 			{
@@ -431,8 +431,15 @@ namespace KeeLocker
 			if (!BitLocker.IsAdministrator())
 			{
 				ShowBalloonNotification("KeePass must be started as Administrator to allow scanning for volumes!");
-				Thread.Sleep(5000);
-				scanInfo = RunAgent();
+				try
+				{
+					scanInfo = RunAgent();
+				}
+				catch (Exception ex)
+				{
+					ShowBalloonNotification("Reading BitLocker volumes failed!");
+					return;
+				}
 			}
 			else
 			{
