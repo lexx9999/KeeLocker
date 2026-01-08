@@ -1,4 +1,5 @@
 ﻿using KeePassLib.Security;
+using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -6,6 +7,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
+using System.Xml.Serialization;
 
 namespace KeeLocker
 {
@@ -17,7 +19,7 @@ namespace KeeLocker
 		public const bool DefaultUnlockOnConnection = false;
 		public const bool DefaultUnlockOnOpening = false;
 
-		internal static readonly Regex volumeRx = new Regex(@"^(?:\\{2}\?\\)?(Volume\{[0-9a-z-]+\})\\*", RegexOptions.IgnoreCase); 
+		internal static readonly Regex volumeRx = new Regex(@"^(?:\\{2}\?\\)?(Volume\{[0-9a-z-]+\})\\*", RegexOptions.IgnoreCase);
 		internal static readonly Regex driveRx = new Regex(@"^(?:\\{2}\?\\)?([a-z]:)\\*$", RegexOptions.IgnoreCase);
 		internal static string FormatSize(long totalSize)
 		{
@@ -46,7 +48,7 @@ namespace KeeLocker
 		{
 			return string.IsNullOrEmpty(str) ? null : str;
 		}
-		
+
 		internal static string FirstNotNullNorEmpty(params string[] strs)
 		{
 			foreach (string str in strs)
@@ -118,6 +120,26 @@ namespace KeeLocker
 			thread.Start();
 		}
 
+		public static string GetMachineGuid()
+		{
+			RegistryKey baseKey = RegistryKey.OpenBaseKey(
+				RegistryHive.LocalMachine,
+				RegistryView.Registry64
+			);
+
+			RegistryKey cryptoKey = baseKey.OpenSubKey(@"SOFTWARE\Microsoft\Cryptography");
+
+			if (cryptoKey == null)
+				return null;
+
+			object value = cryptoKey.GetValue("MachineGuid");
+
+			if (value == null)
+				return null;
+
+			return value.ToString();
+		}
+
 	}
 
 	public enum EDriveIdType
@@ -138,6 +160,8 @@ namespace KeeLocker
 		public string MountPoint { get; set; }
 		public string Volume { get; set; }
 		public EDriveIdType DriveIdType { get; set; }
+
+		[XmlIgnore]
 		public System.IO.DriveInfo DriveInfo { get; set; }
 
 		public Guid[] AuthGuids

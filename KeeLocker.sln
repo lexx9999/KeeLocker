@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KeeLocker", "KeeLocker\KeeL
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KeePassVersionTool", "KeePassVersionTool\KeePassVersionTool.csproj", "{7BB1343D-CBDE-4AEF-95CF-0FF55463B7F5}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KeeLockerAgent", "KeeLockerAgent\KeeLockerAgent.csproj", "{6D3F4A35-5FC6-4C78-A13B-669718B06CD1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{7BB1343D-CBDE-4AEF-95CF-0FF55463B7F5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7BB1343D-CBDE-4AEF-95CF-0FF55463B7F5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7BB1343D-CBDE-4AEF-95CF-0FF55463B7F5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6D3F4A35-5FC6-4C78-A13B-669718B06CD1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6D3F4A35-5FC6-4C78-A13B-669718B06CD1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6D3F4A35-5FC6-4C78-A13B-669718B06CD1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6D3F4A35-5FC6-4C78-A13B-669718B06CD1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

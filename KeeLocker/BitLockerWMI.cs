@@ -46,7 +46,15 @@ namespace KeeLocker.BitLockerWMI
 		public List<KeyProtectorInfo> KeyProtectors { get; set; }
 	}
 
-	internal static class BitLocker
+	public class ScanInfo
+	{
+		public string MachineId { get; set; }
+		public List<VolumeInfo> Volumes { get; set; }
+
+		public string Creator { get; set; }
+	}
+
+public static class BitLocker
 	{
 
 		public static bool IsAdministrator()
