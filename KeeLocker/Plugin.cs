@@ -77,10 +77,6 @@ namespace KeeLocker
 			m_host.MainWindow.FileOpened -= OnKPDBOpen;
 		}
 
-
-
-
-
 		public override System.Windows.Forms.ToolStripMenuItem GetMenuItem(KeePass.Plugins.PluginMenuType t)
 		{
 			switch (t)

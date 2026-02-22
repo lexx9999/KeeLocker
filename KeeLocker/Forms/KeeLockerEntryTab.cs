@@ -17,8 +17,8 @@ namespace KeeLocker.Forms
 		private KeePassLib.Collections.ProtectedStringDictionary m_entrystrings;
 		private readonly PwEntryForm PwEntryForm;
 		private EntryData m_EntryData = new EntryData();
-	
 
+		private bool m_AutoSizeColumns = false;
 
 		private IList<VolumeInfo> VolumeInfos = new List<VolumeInfo>();
 
@@ -39,6 +39,7 @@ namespace KeeLocker.Forms
 			SetStatus(null);
 
 			MigrateSettings();
+			m_AutoSizeColumns = true;
 
 
 			UpdateUi();
@@ -168,6 +169,7 @@ namespace KeeLocker.Forms
 
 			m_EntryData = Config.LoadEntryData(m_entrystrings);
 			if (m_EntryData == null) m_EntryData = new EntryData();
+			m_AutoSizeColumns = true;
 			UpdateUi();
 			if (m_EntryData.Mounts.Count == 0)
 			{
@@ -288,6 +290,16 @@ namespace KeeLocker.Forms
 			{
 				cbx_SystemVolume.SelectedIndex = 0;
 			}
+
+			if (m_AutoSizeColumns && lvMounts.Items.Count>0)
+			{
+				m_AutoSizeColumns = false;
+				for (int col = 0; col < lvMounts.Columns.Count && col<1; col++)
+				{
+					lvMounts.AutoResizeColumn(col, ColumnHeaderAutoResizeStyle.ColumnContent);
+				}
+			}
+
 
 			cbx_SystemVolume_SelectedIndexChanged(null, EventArgs.Empty);
 			lvMounts_SelectedIndexChanged(null, EventArgs.Empty);
@@ -490,8 +502,16 @@ namespace KeeLocker.Forms
 
 		private void btn_Add_Click(object sender, EventArgs e)
 		{
+			DoAdd(false);
+		}
+
+		private void DoAdd(bool restrict)
+		{
 			if (tx_Custom.Visible)
-				tx_Custom_TextChanged(sender, EventArgs.Empty);
+			{
+				AddMountInfo(CustomMountInfo(), restrict);
+				return;
+			}
 			var vi = (VolumeInfo)cbx_SystemVolume.SelectedData;
 			if (vi == null)
 				return;
@@ -500,22 +520,13 @@ namespace KeeLocker.Forms
 				DriveGUID = vi.Volume,
 				DriveMountPoint = vi.MountPoint,
 				DriveIdType = EDriveIdType.GUID
-			}, false);
+			}, restrict);
 		}
 
 		private void btn_AddMachine_Click(object sender, EventArgs e)
 		{
-			if (tx_Custom.Visible)
-				tx_Custom_TextChanged(sender, EventArgs.Empty);
-			var vi = (VolumeInfo)cbx_SystemVolume.SelectedData;
-			if (vi == null)
-				return;
-			AddMountInfo(new MountInfo
-			{
-				DriveGUID = vi.Volume,
-				DriveMountPoint = vi.MountPoint,
-				DriveIdType = EDriveIdType.GUID
-			}, true);
+			DoAdd(true);
+
 		}
 		private void AddMountInfo(MountInfo mi, bool restrictMachine)
 		{
@@ -541,6 +552,7 @@ namespace KeeLocker.Forms
 				m_EntryData.Mounts.Add(mi);
 			}
 			m_EntryData.SelectedMount = z;
+			m_AutoSizeColumns = true;
 			UpdateUi();
 		}
 
@@ -552,8 +564,22 @@ namespace KeeLocker.Forms
 		private void btn_RefreshVolumes_Click(object sender, EventArgs e)
 		{
 			btn_RefreshVolumes.Enabled = false;
+			m_AutoSizeColumns = true;
 			RefreshVolumes();
 			btn_RefreshVolumes.Enabled = true;
+		}
+
+		private void tx_Custom_Enter(object sender, EventArgs e)
+		{
+			if (OS.IsWindows)
+			{
+				SetStatus(@"Enter VolumeId like \\?\Volume{uuid}\ or path like D:, D:\ or D:\ssd1  (trailing \ is optional)", false);
+			}
+		}
+
+		private void tx_Custom_Leave(object sender, EventArgs e)
+		{
+			SetStatus(null, false);
 		}
 	}
 }

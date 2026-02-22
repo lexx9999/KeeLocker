@@ -108,7 +108,7 @@ namespace KeeLocker.Forms
       this.grp_Drive.Size = new System.Drawing.Size(586, 225);
       this.grp_Drive.TabIndex = 112;
       this.grp_Drive.TabStop = false;
-      this.grp_Drive.Text = "Drive info";
+      this.grp_Drive.Text = "Drive info (On different computers a drive may have different ids)";
       // 
       // btn_AddMachine
       // 
@@ -190,12 +190,14 @@ namespace KeeLocker.Forms
       // 
       // tx_Custom
       // 
-      this.tx_Custom.Location = new System.Drawing.Point(148, 193);
+      this.tx_Custom.Location = new System.Drawing.Point(259, 193);
       this.tx_Custom.Margin = new System.Windows.Forms.Padding(2);
       this.tx_Custom.Name = "tx_Custom";
-      this.tx_Custom.Size = new System.Drawing.Size(432, 22);
+      this.tx_Custom.Size = new System.Drawing.Size(321, 22);
       this.tx_Custom.TabIndex = 113;
       this.tx_Custom.TextChanged += new System.EventHandler(this.tx_Custom_TextChanged);
+      this.tx_Custom.Enter += new System.EventHandler(this.tx_Custom_Enter);
+      this.tx_Custom.Leave += new System.EventHandler(this.tx_Custom_Leave);
       this.tx_Custom.Validated += new System.EventHandler(this.tx_Custom_Validated);
       // 
       // btn_RefreshVolumes
@@ -227,7 +229,7 @@ namespace KeeLocker.Forms
       this.cbx_SystemVolume.Margin = new System.Windows.Forms.Padding(4);
       this.cbx_SystemVolume.Name = "cbx_SystemVolume";
       this.cbx_SystemVolume.SelectedData = null;
-      this.cbx_SystemVolume.Size = new System.Drawing.Size(129, 23);
+      this.cbx_SystemVolume.Size = new System.Drawing.Size(240, 23);
       this.cbx_SystemVolume.TabIndex = 106;
       this.cbx_SystemVolume.SelectedIndexChanged += new System.EventHandler(this.cbx_SystemVolume_SelectedIndexChanged);
       // 
