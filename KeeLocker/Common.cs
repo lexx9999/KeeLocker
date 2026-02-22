@@ -1,4 +1,5 @@
-﻿using KeePassLib.Security;
+﻿using KeePassLib;
+using KeePassLib.Security;
 using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
@@ -59,30 +60,6 @@ namespace KeeLocker
 			return null;
 		}
 
-
-		internal static bool GetBoolSetting(KeePassLib.Security.ProtectedString Value, bool defaultValue)
-		{
-			if (Value == null)
-				return defaultValue;
-			string tmp = Value.ReadString().Trim().ToLower();
-			switch (tmp)
-			{
-				case "true":
-					return true;
-				case "false":
-					return false;
-				default:
-					return defaultValue;
-			}
-		}
-		internal static string BoolFor(bool Value, bool defaultValue)
-		{
-			if (Value == defaultValue)
-				return "";
-
-			return Value ? "true" : "false";
-		}
-
 		private static void TryUnlockVolume_Thread(IEnumerable<BitLockerItem> bitLockerItems, EUnlockReason UnlockReason, System.Windows.Forms.Control target, UnlockResultDelegate unlockResult)
 		{
 			// filter attempts by results of FindFirstVolumeW ... and QueryDosDeviceW
@@ -140,7 +117,49 @@ namespace KeeLocker
 			return value.ToString();
 		}
 
+		public static EDriveIdType GetDriveIdTypeFromString(KeePassLib.Security.ProtectedString DriveIdType)
+		{
+			if (DriveIdType != null)
+			{
+				string DriveIdTypeString = DriveIdType.ReadString();
+				if (DriveIdTypeString == EDriveIdType.MountPoint.ToString())
+					return EDriveIdType.MountPoint;
+				else if (DriveIdTypeString == EDriveIdType.GUID.ToString())
+					return EDriveIdType.GUID;
+			}
+			return Common.DriveIdTypeDefault;
+		}
+
+		public static bool IsMatch(string actual, string requested)
+		{
+			if (string.IsNullOrEmpty(actual)) return false;
+			if (string.IsNullOrEmpty(requested))
+				return true;
+			return string.Equals(actual, requested, StringComparison.InvariantCultureIgnoreCase);
+		}
+		internal static void MapMountInfoToBitlocker(List<BitLockerItem> mapped, string computerName, string machineId, KeePassLib.Collections.ProtectedStringDictionary Strings, EntryData entry)
+		{
+			if (entry.Mounts == null || entry.Mounts.Count == 0) return;
+			KeePassLib.Security.ProtectedString Password = Strings.Get(PwDefs.PasswordField);
+			if (Password == null || Password.IsEmpty)
+				return;
+			entry.Mounts.ForEach(m =>
+			{
+				if (string.IsNullOrEmpty(m.DriveGUID) && string.IsNullOrEmpty(m.DriveMountPoint))
+					return;
+				if (!(Common.IsMatch(computerName, m.ComputerName) || Common.IsMatch(machineId, m.MachineId)))
+					return;
+
+				mapped.Add(new BitLockerItem(m.DriveIdType,
+			 new KeePassLib.Security.ProtectedString(true, m.DriveMountPoint),
+			 new KeePassLib.Security.ProtectedString(true, m.DriveGUID),
+			 Password,
+			 entry.PasswordIsRecoveryKey));
+			});
+			// TODO: do we want to add an item for the recoverykey if it's stored as property?
+		}
 	}
+
 
 	public enum EDriveIdType
 	{

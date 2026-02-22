@@ -7,7 +7,6 @@ using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Text;
-using System.Threading;
 using System.Windows.Forms;
 using System.Xml.Serialization;
 
@@ -21,6 +20,7 @@ namespace KeeLocker
 		public const string StringName_UnlockOnOpening = Globals.CONFIG_PREFIX + "OnOpening";
 		public const string StringName_UnlockOnConnection = Globals.CONFIG_PREFIX + "OnConnection";
 		public const string StringName_IsRecoveryKey = Globals.CONFIG_PREFIX + "IsRecoveryKey";
+		public const string StringName_V1 = Globals.CONFIG_PREFIX + "V1";
 		public const string StringName_RecoveryKey = "RecoveryKey";
 
 		internal KeePass.Plugins.IPluginHost m_host;
@@ -63,24 +63,6 @@ namespace KeeLocker
 			KeePass.UI.GlobalWindowManager.WindowAdded += OnWindowAdded;
 
 			m_Subscription = FveApi.StateChangeNotification_Subscribe(OnDriveConnected);
-
-			//bool runScanAdmin = false;
-			//foreach (KeyValuePair<string, string> kv in host.CommandLineArgs.Parameters)
-			//{
-
-			// if (kv.Key.Equals(Globals.APP_NAME+"Scan", StringComparison.InvariantCultureIgnoreCase))
-			//	{
-			//		runScanAdmin = true;
-			//		break;
-			//	}
-			//}
-			//if (runScanAdmin)
-			//{
-
-			//}
-
-
-			// host.CustomConfig.SetString("KeeLocker_Hello", "Welcome");
 			return true;
 		}
 
@@ -375,39 +357,43 @@ namespace KeeLocker
 				else
 					driveIdType = Common.DriveIdTypeDefault;
 
-				pe.Strings.Set(PwDefs.UserNameField, new KeePassLib.Security.ProtectedString(false,
-					Common.FirstNotNullNorEmpty(recoveryKeyId, volume.PersistentVolumeID, volume.VolumeID, volume.DriveLetter)));
+				var strings = pe.Strings;
+				var mi = new MountInfo() { DriveIdType = driveIdType, DriveGUID = volume.VolumeID, DriveMountPoint = volume.DriveLetter };
+				var entry = new EntryData()
+				{
+					Mounts = new List<MountInfo> { mi },
+					SelectedMount = 0,
+					UnlockOnConnection = false,
+					UnlockOnOpening = false,
+					Version = 1,
+					PasswordIsRecoveryKey = false,
+
+				};
+				Config.SetStringValue(strings, PwDefs.UserNameField, Common.FirstNotNullNorEmpty(recoveryKeyId, volume.PersistentVolumeID, volume.VolumeID, volume.DriveLetter));
 
 				if (recoveryKey != null && password)
 				{
-					// pe.Strings.Set(KeeLockerExt.StringName_Password, null);
-					pe.Strings.Set(KeeLockerExt.StringName_RecoveryKey, new KeePassLib.Security.ProtectedString(true, recoveryKey));
-					pe.Strings.Set(KeeLockerExt.StringName_IsRecoveryKey, new KeePassLib.Security.ProtectedString(false, Common.BoolFor(false, true)));
-					pe.Strings.Set(PwDefs.NotesField, new KeePassLib.Security.ProtectedString(false, string.Format("Recovery Key stored in field '{0}'", KeeLockerExt.StringName_RecoveryKey)));
+					entry.PasswordIsRecoveryKey = false;
+					Config.SetStringValue(strings, KeeLockerExt.StringName_RecoveryKey, recoveryKey, true);
+					Config.SetStringValue(strings, PwDefs.NotesField, string.Format("Recovery Key stored in field '{0}'", KeeLockerExt.StringName_RecoveryKey));
 				}
 				else if (recoveryKey != null)
 				{
-					// only recovery key, store as password
-					pe.Strings.Set(PwDefs.PasswordField, new KeePassLib.Security.ProtectedString(true, recoveryKey));
-					pe.Strings.Set(KeeLockerExt.StringName_IsRecoveryKey, new KeePassLib.Security.ProtectedString(false, Common.BoolFor(true, false)));
-
+					Config.SetStringValue(strings, PwDefs.PasswordField, recoveryKey, true);
+					entry.PasswordIsRecoveryKey = true;
 				}
 				else
 				{
-					pe.Strings.Set(KeeLockerExt.StringName_IsRecoveryKey, new KeePassLib.Security.ProtectedString(false, Common.BoolFor(false, true)));
+					entry.PasswordIsRecoveryKey = false;
 				}
 				if (password)
 				{
-					// add note to fill password manually
-					pe.Strings.Set(PwDefs.NotesField, new KeePassLib.Security.ProtectedString(false, "Password needs to be filled manually"));
+					Config.SetStringValue(strings, PwDefs.NotesField, "Password needs to be filled manually");
 					pe.IconId = PwIcon.Warning;
 				}
 
-				pe.Strings.Set(KeeLockerExt.StringName_DriveIdType, new KeePassLib.Security.ProtectedString(false, driveIdType == Common.DriveIdTypeDefault ? "" : driveIdType.ToString()));
-				pe.Strings.Set(KeeLockerExt.StringName_DriveGUID, new KeePassLib.Security.ProtectedString(false, volume.VolumeID));
-				pe.Strings.Set(KeeLockerExt.StringName_DriveMountPoint, new KeePassLib.Security.ProtectedString(false, volume.DriveLetter));
-
-				pe.Strings.Set(PwDefs.TitleField, new KeePassLib.Security.ProtectedString(false, "BitLocker " + vi.DisplayText));
+				Config.SetStringValue(strings, PwDefs.TitleField, "BitLocker " + vi.DisplayText);
+				Config.SaveEntryData(strings, entry);
 
 				if (null == findDuplicate(scanResultGroup, pe))
 					scanResultGroup.AddEntry(pe, true);
@@ -496,16 +482,17 @@ namespace KeeLocker
 				byte[] data = caller.Execute(cmd);
 
 				XmlSerializer serializer = new XmlSerializer(typeof(ScanInfo));
-				using (MemoryStream reader = new MemoryStream(data)) {
+				using (MemoryStream reader = new MemoryStream(data))
+				{
 					ScanInfo parsed = (ScanInfo)serializer.Deserialize(reader);
 					return parsed;
 				}
-				
+
 
 			}
 			catch (Exception e)
 			{
-				throw new Exception("Reading Bitlocker volumes failed",e);
+				throw new Exception("Reading Bitlocker volumes failed", e);
 			}
 
 		}
@@ -579,41 +566,29 @@ namespace KeeLocker
 		private IList<BitLockerItem> mapUnlockItems(IEnumerable<KeePassLib.PwEntry> pwEntries, EUnlockReason UnlockReason)
 		{
 			List<BitLockerItem> mapped = new List<BitLockerItem>();
+			string computerName = Environment.MachineName;
+			string machineId = Common.GetMachineGuid();
+
 			foreach (KeePassLib.PwEntry Entry in pwEntries)
 			{
 				if (Entry == null) continue;
 				KeePassLib.Collections.ProtectedStringDictionary Strings = Entry.Strings;
-				KeePassLib.Security.ProtectedString UnlockOnOpening = Strings.Get(StringName_UnlockOnOpening);
-				KeePassLib.Security.ProtectedString UnlockOnConnection = Strings.Get(StringName_UnlockOnConnection);
-				bool UnlockOnOpening_bool = Common.GetBoolSetting(UnlockOnOpening, Common.DefaultUnlockOnOpening);
-				bool UnlockOnConnection_bool = Common.GetBoolSetting(UnlockOnConnection, Common.DefaultUnlockOnConnection);
+				EntryData entry = Config.LoadKeelockerStringConfig(Strings);
+				if (entry == null) entry = Config.LoadEntryData(Strings);
+				if (entry == null) continue;
 
 				switch (UnlockReason)
 				{
 					case EUnlockReason.DatabaseOpening:
-						if (!UnlockOnOpening_bool) continue;
+						if (!entry.UnlockOnOpening) continue;
 						break;
 					case EUnlockReason.DriveConnected:
-						if (!UnlockOnConnection_bool) continue;
+						if (!entry.UnlockOnConnection) continue;
 						break;
 					case EUnlockReason.UserRequest:
 						break;
 				}
-
-				KeePassLib.Security.ProtectedString DriveMountPoint = Strings.Get(StringName_DriveMountPoint);
-				KeePassLib.Security.ProtectedString DriveGUID = Strings.Get(StringName_DriveGUID);
-				if (((DriveMountPoint == null || DriveMountPoint.IsEmpty) && (DriveGUID == null || DriveGUID.IsEmpty)))
-					continue;
-
-				KeePassLib.Security.ProtectedString DriveIdTypeStr = Strings.Get(StringName_DriveIdType);
-				KeePassLib.Security.ProtectedString IsRecoveryKey = Strings.Get(StringName_IsRecoveryKey);
-				KeePassLib.Security.ProtectedString Password = Strings.Get(PwDefs.PasswordField);
-				bool IsRecoveryKey_bool = Common.GetBoolSetting(IsRecoveryKey, Common.DefaultIsRecoveryKey);
-
-				if (Password == null || Password.IsEmpty)
-					continue;
-				EDriveIdType DriveIdType = Forms.KeeLockerEntryTab.GetDriveIdTypeFromString(DriveIdTypeStr);
-				mapped.Add(new BitLockerItem(DriveIdType, DriveMountPoint, DriveGUID, Password, IsRecoveryKey_bool));
+				Common.MapMountInfoToBitlocker(mapped, computerName, machineId, Strings, entry);
 			}
 			return mapped;
 		}

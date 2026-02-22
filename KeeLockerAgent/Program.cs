@@ -5,7 +5,6 @@ namespace KeeLockerAgent
 {
 	using KeeLocker;
 	using KeeLocker.BitLockerWMI;
-	using System.Diagnostics;
 	using System.Text;
 	using System.Threading;
 	using System.Xml.Serialization;
