@@ -5,11 +5,21 @@ using System.Security.AccessControl;
 using System.Security.Principal;
 using System.Threading;
 
-namespace KeeLocker
+namespace KeeLockerAgent
 {
-	internal static class OneShotElevatorCallee
+	internal class OneShotElevatorCallee
 	{
-		public static int Run(string channelId, string callerSidString, Func<byte[], byte[]> handler)
+		private readonly string channelId;
+		private readonly string callerSidString;
+		private readonly string baseName;
+
+		public OneShotElevatorCallee(string channelId, string callerSidString, string baseName)
+		{
+			this.channelId = channelId;
+			this.callerSidString = callerSidString;
+			this.baseName = baseName;
+		}
+		public int Run(Func<byte[], byte[]> handler)
 		{
 			SecurityIdentifier callerSid = new SecurityIdentifier(callerSidString);
 
@@ -64,14 +74,14 @@ namespace KeeLocker
 			}
 		}
 
-		private static string BuildPipeName(string channelId)
+		private  string BuildPipeName(string channelId)
 		{
-			return Globals.APP_NAME + ".Pipe." + channelId;
+			return baseName+ ".Pipe." + channelId;
 		}
 
-		private static string BuildEventName(string channelId)
+		private  string BuildEventName(string channelId)
 		{
-			return Globals.APP_NAME + ".Ready." + channelId;
+			return baseName + ".Ready." + channelId;
 		}
 
 		private static PipeSecurity BuildPipeSecurity(SecurityIdentifier callerSid)

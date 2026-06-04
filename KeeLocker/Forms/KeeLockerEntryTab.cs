@@ -1,4 +1,5 @@
-﻿using KeePass.Forms;
+﻿using KeeLocker.BitLockerWMI;
+using KeePass.Forms;
 using KeePass.Plugins;
 using System;
 using System.Collections.Generic;
@@ -34,7 +35,7 @@ namespace KeeLocker.Forms
 			icon.Image = plugin.SmallIcon;
 
 			m_ComputerName = Environment.MachineName;
-			m_MachineId = Common.GetMachineGuid();
+			m_MachineId = Util.GetMachineGuid();
 
 			SetStatus(null);
 

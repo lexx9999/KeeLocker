@@ -45,10 +45,7 @@ namespace KeeLocker
 			return Math.Floor(f).ToString("F0") + suffix.Substring(s * 2, 2); ;
 		}
 
-		internal static string NullForEmpty(string str)
-		{
-			return string.IsNullOrEmpty(str) ? null : str;
-		}
+
 
 		internal static string FirstNotNullNorEmpty(params string[] strs)
 		{
@@ -97,25 +94,7 @@ namespace KeeLocker
 			thread.Start();
 		}
 
-		public static string GetMachineGuid()
-		{
-			RegistryKey baseKey = RegistryKey.OpenBaseKey(
-				RegistryHive.LocalMachine,
-				RegistryView.Registry64
-			);
 
-			RegistryKey cryptoKey = baseKey.OpenSubKey(@"SOFTWARE\Microsoft\Cryptography");
-
-			if (cryptoKey == null)
-				return null;
-
-			object value = cryptoKey.GetValue("MachineGuid");
-
-			if (value == null)
-				return null;
-
-			return value.ToString();
-		}
 
 		public static EDriveIdType GetDriveIdTypeFromString(KeePassLib.Security.ProtectedString DriveIdType)
 		{

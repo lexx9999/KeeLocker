@@ -3,11 +3,10 @@ using System.IO;
 
 namespace KeeLockerAgent
 {
-	using KeeLocker;
-	using KeeLocker.BitLockerWMI;
 	using System.Text;
 	using System.Threading;
 	using System.Xml.Serialization;
+	using KeeLocker.BitLockerWMI;
 
 	internal class Program
 	{
@@ -20,8 +19,9 @@ namespace KeeLockerAgent
 
 			string channelId = args[0];
 			string callerSid = args[1];
+			var callee=new OneShotElevatorCallee(channelId, callerSid, "KeeLocker");
 
-			int rc= OneShotElevatorCallee.Run(channelId, callerSid, request =>
+			int rc= callee.Run(request =>
 			{
 				// request → response
 				return ProcessRequest(request);
@@ -39,7 +39,7 @@ namespace KeeLockerAgent
 			var scanInfo = new ScanInfo
 			{
 				Volumes = BitLocker.GetBitLockerVolumes(),
-				MachineId = Common.GetMachineGuid(),
+				MachineId = Util.GetMachineGuid(),
 				Creator = "Agent"
 			};
 

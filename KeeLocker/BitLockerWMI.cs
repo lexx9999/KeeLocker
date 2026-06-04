@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Win32;
+using System;
 using System.Collections.Generic;
 using System.Management;
 using System.Security.Principal;
@@ -19,7 +20,7 @@ namespace KeeLocker.BitLockerWMI
 		Passphrase = 8,                      // Passphrase
 		TpmCertificate = 9,                  // TPM Certificate
 		CngProtector = 10,                    // CryptoAPI Next Generation (CNG) Protector
-	
+
 		Unsupported = ~0u
 	}
 
@@ -54,7 +55,7 @@ namespace KeeLocker.BitLockerWMI
 		public string Creator { get; set; }
 	}
 
-public static class BitLocker
+	public static class BitLocker
 	{
 
 		public static bool IsAdministrator()
@@ -127,9 +128,9 @@ public static class BitLocker
 
 							info.KeyProtectors.Add(new KeyProtectorInfo
 							{
-								ID =  Common.NullForEmpty(protectorId),
+								ID = Util.NullForEmpty(protectorId),
 								Type = KeyProtectorType,
-								NumericalPassword = Common.NullForEmpty( NumericalPassword),
+								NumericalPassword = Util.NullForEmpty(NumericalPassword),
 							});
 						}
 
@@ -199,6 +200,34 @@ public static class BitLocker
 			}
 			catch { }
 			return 0;
+		}
+	}
+
+	public static class Util
+	{
+		internal static string NullForEmpty(string str)
+		{
+			return string.IsNullOrEmpty(str) ? null : str;
+		}
+
+		public static string GetMachineGuid()
+		{
+			RegistryKey baseKey = RegistryKey.OpenBaseKey(
+				RegistryHive.LocalMachine,
+				RegistryView.Registry64
+			);
+
+			RegistryKey cryptoKey = baseKey.OpenSubKey(@"SOFTWARE\Microsoft\Cryptography");
+
+			if (cryptoKey == null)
+				return null;
+
+			object value = cryptoKey.GetValue("MachineGuid");
+
+			if (value == null)
+				return null;
+
+			return value.ToString();
 		}
 	}
 }

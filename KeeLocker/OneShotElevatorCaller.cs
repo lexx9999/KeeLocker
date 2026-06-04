@@ -9,6 +9,14 @@ namespace KeeLocker
 {
 	internal sealed class OneShotElevatorCaller
 	{
+		private readonly string dllPath;
+		private readonly string baseName;
+
+		public OneShotElevatorCaller(string dllPath, string baseName)
+		{
+			this.dllPath = dllPath;
+			this.baseName = baseName;
+		}
 		public byte[] Execute(byte[] request)
 		{
 			string channelId = Guid.NewGuid().ToString("N");
@@ -60,12 +68,11 @@ namespace KeeLocker
 			}
 		}
 
-		private static void StartElevatedAgent(string channelId, string userSid)
+	    private void StartElevatedAgent(string channelId, string userSid)
 		{
-			string dllPath = typeof(OneShotElevatorCaller).Assembly.Location;
 			string agentPath = Path.Combine(
-				Path.GetDirectoryName(dllPath),
-				Path.GetFileNameWithoutExtension(dllPath) + "Agent.exe");
+				dllPath,
+				baseName + "Agent.exe");
 
 			Process p = new Process();
 			p.StartInfo = new ProcessStartInfo();

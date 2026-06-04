@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
+using System.Reflection;
 using System.Text;
 using System.Windows.Forms;
 using System.Xml.Serialization;
@@ -426,14 +427,14 @@ namespace KeeLocker
 			ScanInfo scanInfo;
 			if (!BitLocker.IsAdministrator())
 			{
-				ShowBalloonNotification("KeePass must be started as Administrator to allow scanning for volumes!");
+				// ShowBalloonNotification(Globals.APP_NAME+"Agent must be started as Administrator to allow scanning for volumes!");
 				try
 				{
 					scanInfo = RunAgent();
 				}
 				catch (Exception ex)
 				{
-					ShowBalloonNotification("Reading BitLocker volumes failed!");
+					ShowBalloonNotification("Reading BitLocker volumes via "+Globals.APP_NAME+"Agent failed!");
 					return;
 				}
 			}
@@ -467,10 +468,17 @@ namespace KeeLocker
 
 		private ScanInfo RunAgent()
 		{
+			var kp=Assembly.GetAssembly(m_host.MainWindow.GetType());
+
+			string appDir = System.IO.Path.GetDirectoryName(kp.Location);
+			string pluginDir = System.IO.Path.Combine(appDir, "Plugins");
+
+			// MessageBox.Show("Original plugin folder: " + pluginDir);
+
 			byte[] cmd = UTF8Encoding.UTF8.GetBytes("ScanBitLockerDrives");
 			try
 			{
-				OneShotElevatorCaller caller = new OneShotElevatorCaller();
+				OneShotElevatorCaller caller = new OneShotElevatorCaller(pluginDir, Globals.APP_NAME);
 				byte[] data = caller.Execute(cmd);
 
 				XmlSerializer serializer = new XmlSerializer(typeof(ScanInfo));
@@ -559,7 +567,7 @@ namespace KeeLocker
 		{
 			List<BitLockerItem> mapped = new List<BitLockerItem>();
 			string computerName = Environment.MachineName;
-			string machineId = Common.GetMachineGuid();
+			string machineId = Util.GetMachineGuid();
 
 			foreach (KeePassLib.PwEntry Entry in pwEntries)
 			{
