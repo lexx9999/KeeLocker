@@ -14,13 +14,16 @@ namespace KeeLocker
 {
 	public partial class KeeLockerExt : KeePass.Plugins.Plugin
 	{
-		public const string StringName_DriveMountPoint = Globals.CONFIG_PREFIX + "MountPoint";
-		public const string StringName_DriveGUID = Globals.CONFIG_PREFIX + "GUID";
-		public const string StringName_DriveIdType = Globals.CONFIG_PREFIX + "Type";
-		public const string StringName_UnlockOnOpening = Globals.CONFIG_PREFIX + "OnOpening";
-		public const string StringName_UnlockOnConnection = Globals.CONFIG_PREFIX + "OnConnection";
-		public const string StringName_IsRecoveryKey = Globals.CONFIG_PREFIX + "IsRecoveryKey";
-		public const string StringName_V1 = Globals.CONFIG_PREFIX + "V1";
+		public const string CfgDriveMountPoint = "MountPoint";
+		public const string CfgDriveGUID = "GUID";
+		public const string CfgDriveIdType = "Type";
+		public const string CfgMachineId = "MachineId";
+		public const string CfgComputerName = "ComputerName";
+
+
+		public const string CfgUnlockOnOpening = "OnOpening";
+		public const string CfgUnlockOnConnection = "OnConnection";
+		public const string CfgIsRecoveryKey = "IsRecoveryKey";
 		public const string StringName_RecoveryKey = "RecoveryKey";
 
 		internal KeePass.Plugins.IPluginHost m_host;
@@ -354,17 +357,14 @@ namespace KeeLocker
 					driveIdType = Common.DriveIdTypeDefault;
 
 				var strings = pe.Strings;
-				var mi = new MountInfo() { DriveIdType = driveIdType, DriveGUID = volume.VolumeID, DriveMountPoint = volume.DriveLetter };
 				var entry = new EntryData()
 				{
-					Mounts = new List<MountInfo> { mi },
 					SelectedMount = 0,
 					UnlockOnConnection = false,
 					UnlockOnOpening = false,
-					Version = 1,
 					PasswordIsRecoveryKey = false,
-
 				};
+				entry.Mounts[0] = new MountInfo() { DriveIdType = driveIdType, DriveGUID = volume.VolumeID, DriveMountPoint = volume.DriveLetter };
 				Config.SetStringValue(strings, PwDefs.UserNameField, Common.FirstNotNullNorEmpty(recoveryKeyId, volume.PersistentVolumeID, volume.VolumeID, volume.DriveLetter));
 
 				if (recoveryKey != null && password)
@@ -389,7 +389,7 @@ namespace KeeLocker
 				}
 
 				Config.SetStringValue(strings, PwDefs.TitleField, "BitLocker " + vi.DisplayText);
-				Config.SaveEntryData(strings, entry);
+				Config.SaveKeelockerConfig(strings, entry);
 
 				if (null == findDuplicate(scanResultGroup, pe))
 					scanResultGroup.AddEntry(pe, true);
@@ -464,10 +464,6 @@ namespace KeeLocker
 				KeePass.UI.UIUtil.ShowDialogAndDestroy(scanResults);
 			}
 		}
-
-
-
-
 
 		private ScanInfo RunAgent()
 		{
@@ -569,8 +565,7 @@ namespace KeeLocker
 			{
 				if (Entry == null) continue;
 				KeePassLib.Collections.ProtectedStringDictionary Strings = Entry.Strings;
-				EntryData entry = Config.LoadKeelockerStringConfig(Strings);
-				if (entry == null) entry = Config.LoadEntryData(Strings);
+				EntryData entry = Config.LoadKeelockerConfig(Strings);
 				if (entry == null) continue;
 
 				switch (UnlockReason)

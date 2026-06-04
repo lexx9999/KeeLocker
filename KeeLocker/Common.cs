@@ -143,7 +143,7 @@ namespace KeeLocker
 			KeePassLib.Security.ProtectedString Password = Strings.Get(PwDefs.PasswordField);
 			if (Password == null || Password.IsEmpty)
 				return;
-			entry.Mounts.ForEach(m =>
+			foreach(var m in entry.Mounts.Values)
 			{
 				if (string.IsNullOrEmpty(m.DriveGUID) && string.IsNullOrEmpty(m.DriveMountPoint))
 					return;
@@ -155,7 +155,7 @@ namespace KeeLocker
 			 new KeePassLib.Security.ProtectedString(true, m.DriveGUID),
 			 Password,
 			 entry.PasswordIsRecoveryKey));
-			});
+			}
 			// TODO: do we want to add an item for the recoverykey if it's stored as property?
 		}
 	}

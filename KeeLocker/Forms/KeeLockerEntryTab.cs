@@ -38,33 +38,32 @@ namespace KeeLocker.Forms
 
 			SetStatus(null);
 
-			MigrateSettings();
 			m_AutoSizeColumns = true;
+            UpdateUi(true);
 
-
-			UpdateUi();
+			driveMatchCtxMenu.Opening += DriveMatchCtxMenu_Opening;
+			tsmDriveMatchDelete.Click += btn_Delete_Click;
+			lvMounts.KeyDown += LvMounts_KeyDown;
 
 			if (!OS.IsWindows)
 			{
 				btn_Unlock.Enabled = false;
 			}
+
 		}
 
-		private void MigrateSettings()
+		private void LvMounts_KeyDown(object sender, KeyEventArgs e)
 		{
-			var e =Config.LoadKeelockerStringConfig(m_entrystrings);
-			if (e != null)
+			if (e.KeyCode == Keys.Delete)
 			{
-				// clear legacy settings
-				SetStringValue(KeeLockerExt.StringName_DriveIdType, null);
-				SetStringValue(KeeLockerExt.StringName_DriveMountPoint, null);
-				SetStringValue(KeeLockerExt.StringName_DriveGUID, null);
-				SetStringValue(KeeLockerExt.StringName_UnlockOnOpening, null);
-				SetStringValue(KeeLockerExt.StringName_UnlockOnConnection, null);
-				SetStringValue(KeeLockerExt.StringName_IsRecoveryKey, null);
-				Config.SaveEntryData(m_entrystrings, e);
-				PwEntryForm.UpdateEntryStrings(false, false);
+				e.Handled = true;
+				btn_Delete_Click(sender, e);
 			}
+		}
+
+		private void DriveMatchCtxMenu_Opening(object sender, System.ComponentModel.CancelEventArgs e)
+		{
+			tsmDriveMatchDelete.Enabled = lvMounts.SelectedItems.Count > 0;
 		}
 
 		public static IList<VolumeInfo> EnumVolumeInfo()
@@ -167,23 +166,24 @@ namespace KeeLocker.Forms
 		private void SettingsLoad()
 		{
 
-			m_EntryData = Config.LoadEntryData(m_entrystrings);
+			m_EntryData = Config.LoadKeelockerConfig(m_entrystrings);
 			if (m_EntryData == null) m_EntryData = new EntryData();
 			m_AutoSizeColumns = true;
-			UpdateUi();
-			if (m_EntryData.Mounts.Count == 0)
-			{
-				SetStatus("Select drive from list or edit custom. Then Add to the matches list.", false);
-			}
+			UpdateUi(true);
+			//if (m_EntryData.Mounts.Count == 0)
+			//{
+			//	SetStatus("Select drive from list or edit custom. Then Add to the matches list.", false);
+			//}
 		}
 
 		private Tuple<VolumeInfo, int> FindMountInfoMatch(EntryData entryData)
 		{
 			Tuple<VolumeInfo, int> viVolumeMachine = null;
 			Tuple<VolumeInfo, int> viVolume = null;
-			for (int m = 0; m < entryData.Mounts.Count; m++)
+			foreach (var kv in entryData.Mounts)
 			{
-				var mi = entryData.Mounts[m];
+				var m = kv.Key;
+				var mi = kv.Value;
 				if (string.IsNullOrEmpty(mi.DriveGUID))
 					continue;
 				foreach (var vi in VolumeInfos)
@@ -252,34 +252,34 @@ namespace KeeLocker.Forms
 
 		private void SettingsSave()
 		{
-			Config.SaveEntryData(m_entrystrings,m_EntryData);
+			Config.SaveKeelockerConfig(m_entrystrings, m_EntryData);
 		}
 
 
 
-		private void UpdateUi()
+		private void UpdateUi(bool autoSelect)
 		{
 			chk_UnlockOnOpening.Checked = m_EntryData.UnlockOnOpening;
 			chk_UnlockOnConnection.Checked = m_EntryData.UnlockOnConnection;
 			chk_IsRecoveryKey.Checked = m_EntryData.PasswordIsRecoveryKey;
-			var vv = FindMountInfoMatch(m_EntryData);
+			var vv = autoSelect ? FindMountInfoMatch(m_EntryData) : null;
 			if (vv != null)
 				m_EntryData.SelectedMount = vv.Item2;
 
 			lvMounts.Items.Clear();
-			for (int z = 0; z < m_EntryData.Mounts.Count; z++)
+			foreach (var kv in m_EntryData.Mounts)
 			{
-				var mi = m_EntryData.Mounts[z];
+				var mi = kv.Value;
 				var lvi = new ListViewItem();
+				lvi.ImageIndex = kv.Key;
 				lvi.Tag = mi;
 				lvi.Text = mi.DriveGUID;
 				lvi.SubItems.Add(mi.DriveMountPoint);
-				lvi.SubItems.Add(mi.ComputerName);
-				lvi.SubItems.Add(mi.MachineId);
+				lvi.SubItems.Add(isText(mi.ComputerName, m_ComputerName));
+				lvi.SubItems.Add(isText(mi.MachineId, m_MachineId));
 				lvi.SubItems.Add(mi.DriveIdType.ToString());
 				lvMounts.Items.Add(lvi);
-				lvi.Selected = m_EntryData.SelectedMount == z;
-
+				lvi.Selected = m_EntryData.SelectedMount == kv.Key;
 			}
 
 			if (vv != null || cbx_SystemVolume.Items.Count == 0)
@@ -305,6 +305,14 @@ namespace KeeLocker.Forms
 			lvMounts_SelectedIndexChanged(null, EventArgs.Empty);
 		}
 
+		private String isText(string val, string thisVal)
+		{
+			if (string.IsNullOrEmpty(val)) return "<any>";
+			if (string.Equals(val, thisVal, StringComparison.InvariantCultureIgnoreCase))
+				return "<THIS>";
+			return val;
+		}
+
 		public void OnSave(object sender, EventArgs e)
 		{
 			if (_selected) // if not selected it was never opened or is already saved because of tab switch
@@ -315,14 +323,14 @@ namespace KeeLocker.Forms
 		private void chk_UnlockOnOpening_Click(object sender, EventArgs e)
 		{
 			m_EntryData.UnlockOnOpening = chk_UnlockOnOpening.Checked;
-			UpdateUi();
+			UpdateUi(false);
 			SetStatus(null);
 
 		}
 		private void chk_UnlockOnConnection_Click(object sender, EventArgs e)
 		{
 			m_EntryData.UnlockOnConnection = chk_UnlockOnConnection.Checked;
-			UpdateUi();
+			UpdateUi(false);
 		}
 
 		private void SetStatus(string text, bool isError = false)
@@ -373,12 +381,12 @@ namespace KeeLocker.Forms
 		private void RefreshVolumes()
 		{
 			FillVolumes();
-			UpdateUi();
+			UpdateUi(true);
 		}
 		private void chk_IsRecoveryKey_Click(object sender, EventArgs e)
 		{
 			m_EntryData.PasswordIsRecoveryKey = chk_IsRecoveryKey.Checked;
-			UpdateUi();
+			UpdateUi(false);
 		}
 
 		private void cbx_SystemVolume_SelectedIndexChanged(object sender, EventArgs e)
@@ -460,9 +468,10 @@ namespace KeeLocker.Forms
 		{
 			if (DialogResult.Yes != MessageBox.Show(btn_Clear, "Reset all " + KeeLocker.Globals.APP_NAME + " entry setting", "Clear settings", MessageBoxButtons.YesNo))
 				return;
-
+			var tmp = m_EntryData;
 			m_EntryData = new EntryData();
-			UpdateUi();
+			m_EntryData.ConfigKeys = tmp.ConfigKeys;
+			UpdateUi(true);
 		}
 
 		private void icon_Click(object sender, EventArgs e)
@@ -488,16 +497,19 @@ namespace KeeLocker.Forms
 
 		private void btn_Delete_Click(object sender, EventArgs e)
 		{
+			if (lvMounts.SelectedItems.Count == 0)
+				return;
 			// TODO: ask confirmation
-			var mounts = new List<MountInfo>();
+			var mounts = new SortedDictionary<int, MountInfo>();
 
 			foreach (ListViewItem lvi in lvMounts.Items)
 			{
 				if (!lvi.Selected)
-					mounts.Add((MountInfo)lvi.Tag);
+					mounts[lvi.Index] = (MountInfo)lvi.Tag;
 			}
+			m_EntryData.SelectedMount = -1;
 			m_EntryData.Mounts = mounts;
-			UpdateUi();
+			UpdateUi(false);
 		}
 
 		private void btn_Add_Click(object sender, EventArgs e)
@@ -539,21 +551,29 @@ namespace KeeLocker.Forms
 				mi.MachineId = m_MachineId;
 			}
 
-			int z = m_EntryData.Mounts.FindIndex(m =>
-			 m.DriveIdType == mi.DriveIdType &&
-			 string.Equals(m.DriveGUID, mi.DriveGUID, StringComparison.InvariantCultureIgnoreCase) &&
-			 string.Equals(m.DriveMountPoint, mi.DriveMountPoint, StringComparison.InvariantCultureIgnoreCase) &&
-			 string.Equals(m.MachineId, mi.MachineId, StringComparison.InvariantCultureIgnoreCase) &&
-			 string.Equals(m.ComputerName, mi.ComputerName, StringComparison.InvariantCultureIgnoreCase));
+			int z = -1;
+			foreach (var kv in m_EntryData.Mounts)
+			{
+				var m = kv.Value;
+				if (m.DriveIdType == mi.DriveIdType &&
+				 string.Equals(m.DriveGUID, mi.DriveGUID, StringComparison.InvariantCultureIgnoreCase) &&
+				 string.Equals(m.DriveMountPoint, mi.DriveMountPoint, StringComparison.InvariantCultureIgnoreCase) &&
+				 string.Equals(m.MachineId, mi.MachineId, StringComparison.InvariantCultureIgnoreCase) &&
+				 string.Equals(m.ComputerName, mi.ComputerName, StringComparison.InvariantCultureIgnoreCase))
+				{
+					z = kv.Key;
+					break;
+				}
+			}
 
 			if (z == -1)
 			{
-				z = m_EntryData.Mounts.Count;
-				m_EntryData.Mounts.Add(mi);
+				z = m_EntryData.Mounts.Keys.DefaultIfEmpty(-1).Max();
+				m_EntryData.Mounts[z + 1] = mi;
 			}
 			m_EntryData.SelectedMount = z;
 			m_AutoSizeColumns = true;
-			UpdateUi();
+			UpdateUi(true);
 		}
 
 		private void lvMounts_SelectedIndexChanged(object sender, EventArgs e)

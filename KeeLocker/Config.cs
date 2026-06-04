@@ -1,99 +1,201 @@
-﻿using System.Collections.Generic;
-using System.IO;
-using System.Xml.Serialization;
+﻿using KeePassLib.Collections;
+using KeePassLib.Security;
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Xml.Linq;
 
 namespace KeeLocker
 {
 	public static class Config
 	{
-		public static EntryData LoadKeelockerStringConfig(KeePassLib.Collections.ProtectedStringDictionary strings)
+		public static EntryData LoadKeelockerConfig(KeePassLib.Collections.ProtectedStringDictionary strings)
 		{
-			EntryData entry = new EntryData() { Version = 0 };
-
-			EDriveIdType driveIdType;
-			string mountPoint;
-			string guid;
-			bool hasStrValue = false;
-
-			{
-				KeePassLib.Security.ProtectedString DriveIdType = strings.Get(KeeLockerExt.StringName_DriveIdType);
-				if (DriveIdType != null) hasStrValue = true;
-				driveIdType =Common.GetDriveIdTypeFromString(DriveIdType);
+			KeePassLib.Security.ProtectedString val;
+			EntryData entry = new EntryData();
+			if(TryGetSetting(strings, entry, Globals.CONFIG_PREFIX + KeeLockerExt.CfgUnlockOnOpening,out val)){
+				entry.UnlockOnOpening = Config.GetBoolSetting(val, Common.DefaultUnlockOnOpening);
 			}
-
-			{
-				KeePassLib.Security.ProtectedString DriveMountPoint = strings.Get(KeeLockerExt.StringName_DriveMountPoint);
-				if (DriveMountPoint != null) hasStrValue = true;
-				mountPoint = DriveMountPoint != null ? DriveMountPoint.ReadString() : "";
+			if (TryGetSetting(strings, entry, Globals.CONFIG_PREFIX + KeeLockerExt.CfgUnlockOnConnection,out val)){
+				entry.UnlockOnConnection = Config.GetBoolSetting(val, Common.DefaultUnlockOnConnection);
 			}
-
+			if (TryGetSetting(strings, entry, Globals.CONFIG_PREFIX +KeeLockerExt.CfgIsRecoveryKey, out val))
 			{
-				KeePassLib.Security.ProtectedString DriveGUID = strings.Get(KeeLockerExt.StringName_DriveGUID);
-				if (DriveGUID != null) hasStrValue = true;
-				guid = DriveGUID != null ? DriveGUID.ReadString() : "";
+				entry.PasswordIsRecoveryKey = Config.GetBoolSetting(val, Common.DefaultIsRecoveryKey);
 			}
-			if (!string.IsNullOrEmpty(mountPoint) || !string.IsNullOrEmpty(guid))
+			foreach (var kv in strings)
 			{
-				entry.SelectedMount = entry.Mounts.Count;
-				entry.Mounts.Add(new MountInfo()
+				string key = kv.Key;
+				string name;
+				if (string.IsNullOrEmpty(key) || !key.StartsWith(Globals.CONFIG_PREFIX)) continue;
+				int z = key.IndexOf('.');
+                int m = 0;
+				if (z != -1)
 				{
-					DriveIdType = driveIdType,
-					DriveGUID = guid,
-					DriveMountPoint = mountPoint
-				});
+					int w = key.IndexOf('.', z + 1);
+					if (w == -1) // prefix<var>.<n>
+					{
+						if (!int.TryParse(key.Substring(z + 1), System.Globalization.NumberStyles.None, NumberFormatInfo.InvariantInfo, out m))
+						{
+							continue;
+						}
+						name = key.Substring(Globals.CONFIG_PREFIX.Length, z - Globals.CONFIG_PREFIX.Length);
+					}
+					else
+					{ // prefix.<n>.<var>
+						if (!int.TryParse(key.Substring(z + 1, w - z - 1), System.Globalization.NumberStyles.None, NumberFormatInfo.InvariantInfo, out m))
+						{
+							continue;
+						}
+						name = key.Substring(w + 1);
+					}
+				}
+				else
+				{
+					name = key.Substring(Globals.CONFIG_PREFIX.Length);
+				}
+					switch (name)
+					{
+						case KeeLockerExt.CfgDriveIdType:
+							{
+								var mount = mountFor(entry.Mounts, m);
+								mount.DriveIdType = Common.GetDriveIdTypeFromString(kv.Value);
+								entry.ConfigKeys.Add(kv.Key);
+							}
+							break;
+
+						case KeeLockerExt.CfgDriveMountPoint:
+							{
+								var mount = mountFor(entry.Mounts, m);
+								mount.DriveMountPoint = (kv.Value == null) ? null : kv.Value.ReadString();
+								entry.ConfigKeys.Add(kv.Key);
+							}
+							break;
+
+						case KeeLockerExt.CfgDriveGUID:
+							{
+								var mount = mountFor(entry.Mounts, m);
+								mount.DriveGUID = (kv.Value == null) ? null : kv.Value.ReadString();
+								entry.ConfigKeys.Add(kv.Key);
+							}
+							break;
+						case KeeLockerExt.CfgMachineId:
+							{
+								var mount = mountFor(entry.Mounts, m);
+								mount.MachineId = (kv.Value == null) ? null : kv.Value.ReadString();
+								entry.ConfigKeys.Add(kv.Key);
+							}
+							break;
+						case KeeLockerExt.CfgComputerName:
+							{
+								var mount = mountFor(entry.Mounts, m);
+								mount.ComputerName= (kv.Value == null) ? null : kv.Value.ReadString();
+								entry.ConfigKeys.Add(kv.Key);
+							}
+							break;
+					}
 			}
 
-			{
-				KeePassLib.Security.ProtectedString UnlockOnOpening = strings.Get(KeeLockerExt.StringName_UnlockOnOpening);
-				if (UnlockOnOpening != null) hasStrValue = true;
-				entry.UnlockOnOpening = Config.GetBoolSetting(UnlockOnOpening, Common.DefaultUnlockOnOpening);
-			}
-			{
-				KeePassLib.Security.ProtectedString UnlockOnConnection = strings.Get(KeeLockerExt.StringName_UnlockOnConnection);
-				if (UnlockOnConnection != null) hasStrValue = true;
-				entry.UnlockOnConnection = Config.GetBoolSetting(UnlockOnConnection, Common.DefaultUnlockOnConnection);
-			}
-			{
-				KeePassLib.Security.ProtectedString IsRecoveryKey = strings.Get(KeeLockerExt.StringName_IsRecoveryKey);
-				if (IsRecoveryKey != null) hasStrValue = true;
-				entry.PasswordIsRecoveryKey = Config.GetBoolSetting(IsRecoveryKey, Common.DefaultIsRecoveryKey);
-			}
-			return hasStrValue ? entry : null;
+			return (entry.ConfigKeys.Count > 0) ? entry : null;
 		}
 
-		public static EntryData LoadEntryData(KeePassLib.Collections.ProtectedStringDictionary strings)
+		private static bool TryGetSetting(ProtectedStringDictionary strings, EntryData entry, string name, out ProtectedString val)
 		{
-			KeePassLib.Security.ProtectedString V1 = strings.Get(KeeLockerExt.StringName_V1);
-			if (V1 == null || V1.IsEmpty)
-				return null;
-			string xml = V1.ReadString();
-			if (string.IsNullOrEmpty(xml))
-				return null;
+			val = strings.Get(name);
+			if (val != null) entry.ConfigKeys.Add(name);
+			return true;
+		}
 
-			XmlSerializer serializer = new XmlSerializer(typeof(EntryData));
-			using (StringReader reader = new StringReader(xml))
+		private static MountInfo mountFor(IDictionary<int, MountInfo> mounts, int id)
+		{
+			MountInfo mount;
+			if (mounts.TryGetValue(id, out mount)) return mount;
+			mount = new MountInfo();
+			mounts[id] = mount;
+			return mount;
+		}
+
+		private class SettingsSaveHelper
+		{
+			private readonly ProtectedStringDictionary strings;
+
+			ISet<string> deleteKeys = new HashSet<string>();
+			ISet<string> newKeys = new HashSet<string>();
+			public SettingsSaveHelper(KeePassLib.Collections.ProtectedStringDictionary strings)
 			{
-				EntryData entry = (EntryData)serializer.Deserialize(reader);
-				if (entry.Mounts == null) entry.Mounts = new List<MountInfo>();
-				return entry;
+				this.strings = strings;
+			}
+			public void Set(string name, string value, bool protect = false)
+			{
+				if (string.IsNullOrEmpty(value))
+				{
+					strings.Remove(name);
+					deleteKeys.Add(name);
+				}
+				else
+				{
+					KeePassLib.Security.ProtectedString prev = strings.Get(name);
+					if (prev == null || value != prev.ReadString())
+					{
+						strings.Set(name, new KeePassLib.Security.ProtectedString(protect, value));
+					}
+					newKeys.Add(name);
+				}
+			}
+
+			public ISet<string> Cleanup(ISet<string> configKeys)
+			{
+				var n = new HashSet<string>(configKeys);
+				n.ExceptWith(deleteKeys);
+				n.ExceptWith(newKeys);
+				foreach (var key in n)
+					strings.Remove(key);
+				return newKeys;
 			}
 		}
 
-		public static void SaveEntryData(KeePassLib.Collections.ProtectedStringDictionary strings, EntryData entryData)
+
+		public static void SaveKeelockerConfig(KeePassLib.Collections.ProtectedStringDictionary strings, EntryData entry)
 		{
-			if (entryData.Equals(new EntryData() { Version = entryData.Version, SelectedMount = entryData.SelectedMount }))
+			var ssh = new SettingsSaveHelper(strings);
+			ssh.Set(Globals.CONFIG_PREFIX+ KeeLockerExt.CfgUnlockOnOpening, BoolFor(entry.UnlockOnOpening, Common.DefaultUnlockOnOpening));
+			ssh.Set(Globals.CONFIG_PREFIX + KeeLockerExt.CfgUnlockOnConnection, BoolFor(entry.UnlockOnConnection, Common.DefaultUnlockOnOpening));
+			ssh.Set(Globals.CONFIG_PREFIX + KeeLockerExt.CfgIsRecoveryKey, BoolFor(entry.PasswordIsRecoveryKey, Common.DefaultIsRecoveryKey));
+			if (entry.Mounts.Count == 1 && entry.Mounts.ContainsKey(0))
 			{
-				SetStringValue(strings, KeeLockerExt.StringName_V1, null);
+				// legacy mode (1.8 and earlier), with the extension of ComputerName/MachineId
+				var m = entry.Mounts[0];
+				ssh.Set(Globals.CONFIG_PREFIX + KeeLockerExt.CfgDriveIdType, m.DriveIdType == Common.DriveIdTypeDefault ? null : m.DriveIdType.ToString());
+				ssh.Set(Globals.CONFIG_PREFIX + KeeLockerExt.CfgDriveMountPoint, m.DriveMountPoint);
+				ssh.Set(Globals.CONFIG_PREFIX + KeeLockerExt.CfgDriveGUID, m.DriveGUID);
+				ssh.Set(Globals.CONFIG_PREFIX + KeeLockerExt.CfgComputerName, m.ComputerName);
+				ssh.Set(Globals.CONFIG_PREFIX + KeeLockerExt.CfgMachineId, m.MachineId);
 			}
 			else
 			{
-				entryData.Version = (int)Versions.Current;
 
-				XmlSerializer serializer = new XmlSerializer(entryData.GetType());
-				StringWriter writer = new StringWriter();
-				serializer.Serialize(writer, entryData);
-				SetStringValue(strings, KeeLockerExt.StringName_V1, writer.ToString(), true);
+				foreach (var kv in entry.Mounts)
+				{
+					var prefix = string.Format("{0}.{1:D}.", Globals.CONFIG_PREFIX, kv.Key);
+					var m = kv.Value;
+					ssh.Set(prefix + KeeLockerExt.CfgDriveIdType, m.DriveIdType == Common.DriveIdTypeDefault ? null : m.DriveIdType.ToString());
+					ssh.Set(prefix + KeeLockerExt.CfgDriveMountPoint, m.DriveMountPoint);
+					ssh.Set(prefix + KeeLockerExt.CfgDriveGUID, m.DriveGUID);
+					ssh.Set(prefix + KeeLockerExt.CfgComputerName, m.ComputerName);
+					ssh.Set(prefix + KeeLockerExt.CfgMachineId, m.MachineId);
+				}
 			}
+			entry.ConfigKeys = ssh.Cleanup(entry.ConfigKeys);
+		}
+
+		private static string vn(string name, int m)
+		{
+			if (name.StartsWith(Globals.CONFIG_PREFIX))
+			{
+				return string.Format("{0}.{1:D2}.{2}", Globals.CONFIG_PREFIX, m, name.Substring(Globals.CONFIG_PREFIX.Length));
+			}
+			// we should never get here
+			return string.Format("{0}.{1}", name, m);
 		}
 
 		public static void SetStringValue(KeePassLib.Collections.ProtectedStringDictionary strings, string SettingName, string SettingValue, bool ProtectValue = false)
