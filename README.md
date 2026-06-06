@@ -54,3 +54,13 @@ After the scan you should edit the title of entries you want to keep and move th
 
 - Starting with KeeLocker 1.7 the defaults for unlocking on database opening and device connect are changed to disabled. Which means you have to reenable them if desired.
 - Starting with KeeLocker 1.7.0.2 the MountPoint might be cleared if there is a volume id (GUID).
+
+# Developer notes
+
+## TODOS
+
+- Talk to gugli to either takeover the project or make it independend
+- After heavy refactoring testing 
+- Update docs when ready
+- Add linux support (how to develop) see [issue #3](https://github.com/lexx9999/KeeLocker/issues/3)
+- Maybe names: KeeBitL KeeBitOpen KeeBiLo  KeeDisLocker KeeLockery KeeBite KeeBitManager

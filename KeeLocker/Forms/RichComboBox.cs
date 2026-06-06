@@ -57,6 +57,31 @@ namespace KeeLocker.Forms
 
 		protected int LatestValidIndex = -1;
 
+		public object SelectedData
+		{
+			get
+			{
+				if (SelectedIndex == -1)
+					return null;
+				return GetDataForItem(Items[SelectedIndex]);
+
+			}
+
+			set
+			{
+				for (int i = 0; i < Items.Count; i++)
+				{
+					object data = GetDataForItem(Items[i]);
+					if (data == value)
+					{
+						SelectedIndex = i;
+						return;
+					}
+				}
+				SelectedIndex = -1;
+			}
+		}
+
 		public int Item_Add(SItem Item)
 		{
 			if (LatestValidIndex == -1 && Item.Type == EItemType.Active)
